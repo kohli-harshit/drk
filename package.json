@@ -1,8 +1,8 @@
 {
-  "name": "botkit",
-  "version": "0.5.1",
-  "description": "Building blocks for Building Bots",
-  "main": "lib/Botkit.js",
+  "name": "drk-beta",
+  "version": "0.0.1",
+  "description": "Monotype's Digital Assistant",
+  "main": "slack_bot.js",
   "dependencies": {
     "async": "^2.0.0-rc.5",
     "back": "^1.0.1",
@@ -27,7 +27,8 @@
     "twilio": "^2.9.1",
     "url": "^0.11.0",
     "ware": "^1.3.0",
-    "ws": "^1.1.1"
+    "ws": "^1.1.1",
+    "xlsx" : "0.9.13"
   },
   "devDependencies": {
     "jscs": "^2.7.0",
