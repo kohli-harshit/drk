@@ -1,4 +1,3 @@
-
 //Exit if Token is not specified
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
