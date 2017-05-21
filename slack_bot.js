@@ -14,6 +14,23 @@ var Excel = require('./excel_operations.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
+
+//This is for again opening connection if it closes 
+function start_rtm() {
+        bot.startRTM(function(err,bot,payload) {
+                if (err) {
+                        console.log('Failed to start RTM')
+                        return setTimeout(start_rtm, 2000);
+                }
+                console.log("RTM started!");
+            });
+        }
+
+controller.on('rtm_close', function(bot, err) {
+        start_rtm();
+});
+
+//This is used to specify token in bot
 var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
@@ -133,74 +150,45 @@ controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your na
     bot.reply(message,':robot_face: I am a bot named <@' + bot.identity.name +'>. I have been running for ' + uptime + ' on ' + hostname + '.');
 });
 
-//User wants a machine
+//User want ot know status of a machine 
 controller.hears(['who is using (.*)','what is the status of (.*)','i want to use (.*)'],'direct_message,direct_mention,mention',function(bot,message) {
+   try{
     var machineAssignee=getMachineInfo(message.match[1]);
     bot.reply(message,machineAssignee);
+   }catch(err){
+                 bot.reply(message, 'I\'m sorry I did not get that and not able to process at the time. Please try again.');
+                                                    
+              }
 });
 
-controller.hears(['add new machine (.*)','add a new machine (.*)'],'direct_message,direct_mention,mention',function(bot,message) {
-     var machineNameEntered = message.match[1];
-     
-     bot.startConversation(message, function(err, convo) {
-       convo.ask('Are you sure you want to add '+machineNameEntered + ' ?', [
-            {
-                pattern: bot.utterances.yes,
-                callback: function(response, convo) {
-                    //If machine is not available in the dossier then ping the machine and add it
-                    if(!isMachinePresent(machineNameEntered)) {
-
-                        var isMachineReachable = ping.sys.probe(host, function(isAlive){
-                            return isAlive;
-                        });
-
-                        if(isMachineReachable)
-                        {                             
-                            convo.ask('Please Enter Administrator password to continue....', function(response, convo) {
-                                if(response.text=='Monotype456#') {
-                                    bot.reply(message,addMachine(machineNameEntered));
-                                }
-                                else {
-                                    bot.reply(message, 'Password is incorrect! Please retry to add a new machine again !');                                
-                                }
-                            });
-                        }
-                        else
-                        {
-                            bot.reply(message, 'The machine '+machineNameEntered+ ' is dead! Please check that you can ping the machine and then try again');
-                        }
-                    }
-                    else
+//When user want a Free Virtual Machine.
+controller.hears([,'want a free virtual machine','assign a machine','assign a virtual machine','want a free machine','need a free machine', 'have a free machine'],'direct_message,direct_mention,message_received,ambient,mention',function(bot,message) {
+             bot.startConversation(message, function(err, convo) {
+             convo.ask('Can i help you to assign a random virtual machine available in my dossier', [
+                     {
+                            pattern: bot.utterances.yes,
+                            callback: function(response, convo) {                                          
+                            var flag=0;
+                            convo.say('Please wait, while i will search a free machine for you in my dossier');
+                            try{
+                                var searchMachine=getFreeMachine()
+                               
+                               } catch(err)
+                               {
+                                bot.reply(message, 'I\'m sorry I did not get that. Please try again.');
+                               }
+                            }
+                     },
                     {
-                        bot.reply(message,'This machine is already in my dossier please try with different machine');
+                    pattern: bot.utterances.no,
+                    default: true,
+                    callback: function(response, convo) {
+                    convo.say('Ok! No Problem, You can call me anytime, I will happy to help you');
+                    convo.stop();
                     }
-                    convo.next();
                 }
-            },
-            {
-                pattern: bot.utterances.no,
-                default: true,
-                callback: function(response, convo) {                    
-                    bot.api.reactions.add({
-                        timestamp: message.ts,
-                        channel: message.channel,
-                        name: 'rage',
-                    }, function (err, res) {
-                        if (err) {
-                            bot.botkit.log('Failed to add emoji reaction :(', err);
-                        }
-                    });
-                    convo.next();
-                }
-            }
         ]);
     });
-    
-});
-
-
-controller.hears(['remove machine (.*)', 'remove a machine (.*)'], 'direct_message,direct_mention', function (bot, message) {
-    
 });
 
 function formatUptime(uptime) {
