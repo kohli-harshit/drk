@@ -10,10 +10,11 @@ var Botkit = require('./lib/Botkit.js'),
     controller = Botkit.slackbot({
         storage: mongoStorage
     });
-var Excel = require('./excel_operations.js');
+var Excel = require('./db_operations.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
+var Q = require('q');
 
 //This is for again opening connection if it closes 
 function start_rtm() {
@@ -153,31 +154,54 @@ controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your na
 //User want ot know status of a machine 
 controller.hears(['who is using (.*)','what is the status of (.*)','i want to use (.*)'],'direct_message,direct_mention,mention',function(bot,message) {
    try{
-    var machineAssignee=getMachineInfo(message.match[1]);
-    bot.reply(message,machineAssignee);
-   }catch(err){
-                 bot.reply(message, 'I\'m sorry I did not get that and not able to process at the time. Please try again.');
-                                                    
-              }
+        getMachineInfo(message.match[1], function(machineAssignee) {
+        bot.reply(message,machineAssignee);
+           });
+      }catch(err)
+      {
+        console.log(err);
+        bot.reply(message, 'I am sorry I did not get that & not able to process at the time...... Please try again later.');    
+
+      }
 });
 
 //When user want a Free Virtual Machine.
 controller.hears([,'want a free virtual machine','assign a machine','assign a virtual machine','want a free machine','need a free machine', 'have a free machine'],'direct_message,direct_mention,message_received,ambient,mention',function(bot,message) {
              bot.startConversation(message, function(err, convo) {
-             convo.ask('Can i help you to assign a random virtual machine available in my dossier', [
+             convo.ask('Can i help in your searching of free machine', [
                      {
                             pattern: bot.utterances.yes,
                             callback: function(response, convo) {                                          
-                            var flag=0;
-                            convo.say('Please wait, while i will search a free machine for you in my dossier');
-                            try{
-                                var searchMachine=getFreeMachine()
-                               
-                               } catch(err)
-                               {
-                                bot.reply(message, 'I\'m sorry I did not get that. Please try again.');
-                               }
+                           //  convo.say('Searching for you and soon provide a list of free machines to you');
+                              try{
+                                getFreeMachine(function(searchFreeMachine) {
+
+                                    if(searchFreeMachine[0]!=null)
+                                    { 
+                                      var DisplayTextBeforeMachineList_Promise=Q.denodeify(displayTextBeforeMachineList);
+                                      var promiseDisplayText=displayTextBeforeMachineList(bot,message);
+                                      promiseDisplayText.then
+                                      {
+                                      for (index = 0, len = searchFreeMachine.length; index < len; ++index) 
+                                      {
+                                      bot.reply(message,searchFreeMachine[index]);
+                                      }                                 
+                                      }  
+                                    }                                 
+                                    else
+                                    {
+                                    bot.reply(message,'Ahhhh ! No virtual machine found with this name in my dossier.....Better luck next time');
+                                    }
+                                   });
+                                 } catch(err)
+                                        {
+                                            console.log(err);
+                                            bot.reply(message, 'I am sorry I did not get that & not able to process at the time...... Please try again later.');
+                                            convo.stop();
+                                        }
+                                  convo.stop();  
                             }
+                            
                      },
                     {
                     pattern: bot.utterances.no,
@@ -211,4 +235,10 @@ function formatUptime(uptime) {
 
 function reverse(s) {
     return s.split("").reverse().join("");
+}
+
+function displayTextBeforeMachineList(bot,message)
+{
+    //bot.reply(message,'List of Free machines available in my dossiers are');
+    return message;
 }
