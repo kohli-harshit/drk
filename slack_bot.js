@@ -10,7 +10,7 @@ var Botkit = require('./lib/Botkit.js'),
     controller = Botkit.slackbot({
         storage: mongoStorage
     });
-var Excel = require('./db_operations.js');
+var db = require('./db_operations.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
@@ -21,7 +21,7 @@ function start_rtm() {
         bot.startRTM(function(err,bot,payload) {
                 if (err) {
                         console.log('Failed to start RTM')
-                        return setTimeout(start_rtm, 2000);
+                        return setTimeout(start_rtm, 10000);
                 }
                 console.log("RTM started!");
             });
@@ -151,68 +151,44 @@ controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your na
     bot.reply(message,':robot_face: I am a bot named <@' + bot.identity.name +'>. I have been running for ' + uptime + ' on ' + hostname + '.');
 });
 
-//User want ot know status of a machine 
+//User want to know status of a machine 
 controller.hears(['who is using (.*)','what is the status of (.*)','i want to use (.*)'],'direct_message,direct_mention,mention',function(bot,message) {
    try{
         getMachineInfo(message.match[1], function(machineAssignee) {
-        bot.reply(message,machineAssignee);
-           });
+            bot.reply(message,machineAssignee);
+        });
       }catch(err)
       {
         console.log(err);
-        bot.reply(message, 'I am sorry I did not get that & not able to process at the time...... Please try again later.');    
-
+        bot.reply(message, ':flushed: Oops ! Failed to get machine status...Please try again later.');
       }
 });
 
 //When user want a Free Virtual Machine.
-controller.hears([,'want a free virtual machine','assign a machine','assign a virtual machine','want a free machine','need a free machine', 'have a free machine'],'direct_message,direct_mention,message_received,ambient,mention',function(bot,message) {
-             bot.startConversation(message, function(err, convo) {
-             convo.ask('Can i help in your searching of free machine', [
-                     {
-                            pattern: bot.utterances.yes,
-                            callback: function(response, convo) {                                          
-                           //  convo.say('Searching for you and soon provide a list of free machines to you');
-                              try{
-                                getFreeMachine(function(searchFreeMachine) {
+controller.hears(['want a free virtual machine','assign a machine','assign a virtual machine','want a free machine','need a free machine','want a VM','need a VM','want a free VM','need a free VM'],'direct_message,direct_mention,message_received,mention',function(bot,message) {
+            
+        bot.reply(message,'Looking for machines....');
+        try{
+                getFreeMachine(function(searchFreeMachine) {
 
-                                    if(searchFreeMachine[0]!=null)
-                                    { 
-                                      var DisplayTextBeforeMachineList_Promise=Q.denodeify(displayTextBeforeMachineList);
-                                      var promiseDisplayText=displayTextBeforeMachineList(bot,message);
-                                      promiseDisplayText.then
-                                      {
-                                      for (index = 0, len = searchFreeMachine.length; index < len; ++index) 
-                                      {
-                                      bot.reply(message,searchFreeMachine[index]);
-                                      }                                 
-                                      }  
-                                    }                                 
-                                    else
-                                    {
-                                    bot.reply(message,'Ahhhh ! No virtual machine found with this name in my dossier.....Better luck next time');
-                                    }
-                                   });
-                                 } catch(err)
-                                        {
-                                            console.log(err);
-                                            bot.reply(message, 'I am sorry I did not get that & not able to process at the time...... Please try again later.');
-                                            convo.stop();
-                                        }
-                                  convo.stop();  
-                            }
-                            
-                     },
+                if(searchFreeMachine[0]!=null)
+                { 
+                    bot.reply(message,'Following machines are free to use:-');
+                    for (index = 0, len = searchFreeMachine.length; index < len; ++index) 
                     {
-                    pattern: bot.utterances.no,
-                    default: true,
-                    callback: function(response, convo) {
-                    convo.say('Ok! No Problem, You can call me anytime, I will happy to help you');
-                    convo.stop();
-                    }
+                        bot.reply(message,searchFreeMachine[index]);
+                    }                                 
+                }                           
+                else
+                {                                    
+                    bot.reply(message, ':white_frowning_face: Hard Luck ! We don\'t have any free machines right now.');
                 }
-        ]);
-    });
+            });
+        } catch(err)
+        {
+            console.log(err);
+            bot.reply(message, ':flushed: Oops ! Failed to get free machines list...Please try again later.');                
+        }    
 });
 
 function formatUptime(uptime) {
@@ -235,10 +211,4 @@ function formatUptime(uptime) {
 
 function reverse(s) {
     return s.split("").reverse().join("");
-}
-
-function displayTextBeforeMachineList(bot,message)
-{
-    //bot.reply(message,'List of Free machines available in my dossiers are');
-    return message;
 }

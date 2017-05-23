@@ -19,12 +19,12 @@ function getMachineStatus(document)
                          if(document.status=="login")
                            {  
                             console.log('Machine in use...');
-                            result='This machine is currently logged in by '+document.userName;
+                            result='This machine is currently logged in by '+document.userName + " from " + document.updated_on;
                            }
                          else
                            {
                             console.log('Machine is not in use');
-                            result='Hurry no one is currently using this machine, but it was last logged in by '+document.userName+'at'+document.updated_on;
+                            result='The machine is not logged in by anyone right now. It was last logged in by '+document.userName+' at '+document.updated_on;
                            }                
                     }
                     else
