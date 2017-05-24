@@ -37,7 +37,7 @@ var bot = controller.spawn({
 }).startRTM();
 
 //Reply to Hello and Hey
-controller.hears(['hello', 'hey','\\bhi\\b'], 'direct_message,direct_mention,mention', function (bot, message) {
+controller.hears(['hello', 'hey'], 'direct_message,direct_mention,mention', function (bot, message) {
 
     bot.api.reactions.add({
         timestamp: message.ts,
@@ -186,7 +186,7 @@ controller.hears(['want a free virtual machine','assign a machine','assign a vir
 
                 if(searchFreeMachine[0]!=null)
                 { 
-
+                    bot.reply(message,'Following machines are free to use:-');
                     for (index = 0, len = searchFreeMachine.length; index < len; ++index) 
                     {
                         bot.reply(message,searchFreeMachine[index]);
