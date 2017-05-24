@@ -37,7 +37,7 @@ var bot = controller.spawn({
 }).startRTM();
 
 //Reply to Hello and Hey
-controller.hears(['hello', 'hey'], 'direct_message,direct_mention,mention', function (bot, message) {
+controller.hears(['hello', 'hey','\\bhi\\b'], 'direct_message,direct_mention,mention', function (bot, message) {
 
     bot.api.reactions.add({
         timestamp: message.ts,
