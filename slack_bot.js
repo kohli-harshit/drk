@@ -153,8 +153,21 @@ controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your na
 
 //User want to know status of a machine 
 controller.hears(['who is using (.*)','what is the status of (.*)','i want to use (.*)'],'direct_message,direct_mention,mention',function(bot,message) {
-   try{
-        getMachineInfo(message.match[1], function(machineAssignee) {
+   try{var inputString=message.match[1];
+       if(inputString.indexOf("?") != -1)
+        { 
+            var finalInputString=inputString.substring(0, inputString.indexOf("?")); 
+        }
+        else if(inputString.indexOf(".") != -1)       
+        { 
+            var finalInputString=inputString.substring(0, inputString.indexOf(".")); 
+        }
+        else 
+        { 
+            var finalInputString=inputString; 
+        }
+            
+        getMachineInfo(finalInputString, function(machineAssignee) {
             bot.reply(message,machineAssignee);
         });
       }catch(err)
