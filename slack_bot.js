@@ -6,7 +6,7 @@ if (!process.env.token) {
 
 //Initialize Required Packages and Start the Bot
 var Botkit = require('./lib/Botkit.js'),
-    mongoStorage = require('botkit-storage-mongo')({mongoUri: 'mongodb://noi-qa-jenkins:27017/drk-db'}),
+    mongoStorage = require('botkit-storage-mongo')({ mongoUri: 'mongodb://noi-qa-jenkins:27017/drk-db' }),
     controller = Botkit.slackbot({
         storage: mongoStorage
     });
@@ -18,17 +18,17 @@ var Q = require('q');
 
 //This is for again opening connection if it closes 
 function start_rtm() {
-        bot.startRTM(function(err,bot,payload) {
-                if (err) {
-                        console.log('Failed to start RTM')
-                        return setTimeout(start_rtm, 10000);
-                }
-                console.log("RTM started!");
-            });
+    bot.startRTM(function (err, bot, payload) {
+        if (err) {
+            console.log('Failed to start RTM')
+            return setTimeout(start_rtm, 10000);
         }
+        console.log("RTM started!");
+    });
+}
 
-controller.on('rtm_close', function(bot, err) {
-        start_rtm();
+controller.on('rtm_close', function (bot, err) {
+    start_rtm();
 });
 
 //This is used to specify token in bot
@@ -37,7 +37,7 @@ var bot = controller.spawn({
 }).startRTM();
 
 //Reply to Hello and Hey
-controller.hears(['hello', 'hey','\\bhi\\b'], 'direct_message,direct_mention,mention', function (bot, message) {
+controller.hears(['hello', 'hey', '\\bhi\\b'], 'direct_message,direct_mention,mention', function (bot, message) {
 
     bot.api.reactions.add({
         timestamp: message.ts,
@@ -68,7 +68,7 @@ controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message,direct_men
             };
         }
         user.name = name;
-        controller.storage.users.save(user, function (err, id) {            
+        controller.storage.users.save(user, function (err, id) {
             bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.');
         });
     });
@@ -86,34 +86,34 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
                     convo.say('I do not know your name yet!');
                     convo.ask('What should I call you?', function (response, convo) {
                         convo.ask('You want me to call you `' + response.text + '`?', [{
-                                pattern: 'yes',
-                                callback: function (response, convo) {
-                                    // since no further messages are queued after this,
-                                    // the conversation will end naturally with status == 'completed'
-                                    convo.next();
-                                }
-                            },
-                            {
-                                pattern: 'no',
-                                callback: function (response, convo) {
-                                    // stop the conversation. this will cause it to end with status == 'stopped'
-                                    convo.stop();
-                                }
-                            },
-                            {
-                                default: true,
-                                callback: function (response, convo) {
-                                    convo.repeat();
-                                    convo.next();
-                                }
+                            pattern: 'yes',
+                            callback: function (response, convo) {
+                                // since no further messages are queued after this,
+                                // the conversation will end naturally with status == 'completed'
+                                convo.next();
                             }
+                        },
+                        {
+                            pattern: 'no',
+                            callback: function (response, convo) {
+                                // stop the conversation. this will cause it to end with status == 'stopped'
+                                convo.stop();
+                            }
+                        },
+                        {
+                            default: true,
+                            callback: function (response, convo) {
+                                convo.repeat();
+                                convo.next();
+                            }
+                        }
                         ]);
 
                         convo.next();
 
                     }, {
-                        'key': 'nickname'
-                    }); // store the results in a field called nickname
+                            'key': 'nickname'
+                        }); // store the results in a field called nickname
 
                     convo.on('end', function (convo) {
                         if (convo.status == 'completed') {
@@ -144,51 +144,50 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
 });
 
 //User asks Bot Identity
-controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'],'direct_message,direct_mention,mention',function (bot, message) {
+controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'], 'direct_message,direct_mention,mention', function (bot, message) {
     var hostname = os.hostname();
     var uptime = formatUptime(process.uptime());
 
-    bot.reply(message,':robot_face: I am a bot named <@' + bot.identity.name +'>. I have been running for ' + uptime + ' on ' + hostname + '.');
+    bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '.');
 });
 
 //User want to know status of a machine 
-controller.hears(['who is using (.*)','what is the status of (.*)','i want to use (.*)'],'direct_message,direct_mention,mention',function(bot,message) {
-   try{
-        getMachineInfo(message.match[1], function(machineAssignee) {
-            bot.reply(message,machineAssignee);
+controller.hears(['who is using (.*)', 'what is the status of (.*)', 'i want to use (.*)'], 'direct_message,direct_mention,mention', function (bot, message) {
+    try {
+        getMachineInfo(message.match[1], function (machineAssignee) {
+            bot.reply(message, machineAssignee);
         });
-      }catch(err)
-      {
+    } catch (err) {
         console.log(err);
         bot.reply(message, ':flushed: Oops ! Failed to get machine status...Please try again later.');
-      }
+    }
 });
 
 //When user want a Free Virtual Machine.
-controller.hears(['want a free virtual machine','assign a machine','assign a virtual machine','want a free machine','need a free machine','want a VM','need a VM','want a free VM','need a free VM'],'direct_message,direct_mention,message_received,mention',function(bot,message) {
-            
-        bot.reply(message,'Looking for machines....');
-        try{
-                getFreeMachine(function(searchFreeMachine) {
+controller.hears(['want a free virtual machine', 'assign a machine', 'assign a virtual machine', 'want a free machine', 'need a free machine', 'want a VM', 'need a VM', 'want a free VM', 'need a free VM'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    
+    
+    bot.reply(message, 'Looking for machines....', function (err, message) {
+        try {
+            getFreeMachine(function (searchFreeMachine) {
 
-                if(searchFreeMachine[0]!=null)
-                { 
-
-                    for (index = 0, len = searchFreeMachine.length; index < len; ++index) 
-                    {
-                        bot.reply(message,searchFreeMachine[index]);
-                    }                                 
-                }                           
-                else
-                {                                    
+                if (searchFreeMachine[0] != null) {                    
+                    bot.reply(message, 'Following machines are not logged in by any user right now:-', function () {
+                        for (index = 0, len = searchFreeMachine.length; index < len; ++index) {
+                            bot.reply(message, searchFreeMachine[index]);
+                        }
+                    });
+                }
+                else {
                     bot.reply(message, ':white_frowning_face: Hard Luck ! We don\'t have any free machines right now.');
                 }
             });
-        } catch(err)
-        {
+        } catch (err) {
             console.log(err);
-            bot.reply(message, ':flushed: Oops ! Failed to get free machines list...Please try again later.');                
-        }    
+            bot.reply(message, ':flushed: Oops ! Failed to get free machines list...Please try again later.');
+        }
+    });
+    
 });
 
 function formatUptime(uptime) {
