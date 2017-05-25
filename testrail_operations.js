@@ -1,54 +1,74 @@
 var Client = require('node-rest-client').Client;
 var url="https://type.testrail.com/index.php?/api/";
+var auth="Basic dGFydW4ua3VtYXJAbW9ub3R5cGUuY29tOlRlc3RyYWlsLmNvbUAxMjM=";
 var percentage;
 client = new Client();
 
-function getProjectId(name)
-{       
-        var api_url="v2/get_projects";
-        var api_url=url+api_url;
-        var loginArgs = {
-        headers: 
-        {
-               "Content-Type": "application/json",
-               "Authorization":"Basic dGFydW4ua3VtYXJAbW9ub3R5cGUuY29tOlRlc3RyYWlsLmNvbUAxMjM="
-        }
-};
-client.get(api_url, loginArgs, function(data, response)
+getProjectId = function (name,callback)
 {
-        data.forEach(function(element) 
-        {
-                if(element.name==name)
+        var api_url="v2/get_projects";
+        api_url=url+api_url;
+        var loginArgs = {
+                headers:
                 {
-                        return element.id;
+                "Content-Type": "application/json",
+                "Authorization": auth.toString()
                 }
-        }, this);
-               });
+        };
+        try
+        {
+                client.get(api_url, loginArgs, function(data, response)
+                {                
+                        data.forEach(function(element)
+                        {
+                                //console.log("Element Name - " + element.name);
+                                if(element.name.toString().toLowerCase().indexOf(name.toString().toLowerCase()) != -1)
+                                {
+                                        console.log("Matched Element - " + element.id + ". " + element.name);
+                                        callback(element.id);                                        
+                                }
+                        }, this);
+                });
+        }
+        catch(err)
+        {
+                console.log("Error = " + err);
+        }
+
 }
       
-function getRunDetails(id)
-{       
+getRunDetails = function (id,callback)
+{      
         var runDetails=[];
         var api_url="v2/get_runs/";
         api_url=url+api_url+id;
         var loginArgs = {
-        headers: 
-        {
-               "Content-Type": "application/json",
-               "Authorization":"Basic dGFydW4ua3VtYXJAbW9ub3R5cGUuY29tOlRlc3RyYWlsLmNvbUAxMjM="
-        }
+                headers:
+                {
+                "Content-Type": "application/json",
+                "Authorization":auth.toString()
+                }
         };
         url=url+id;
-        client.get(api_url,loginArgs,function(data,reponse)
+        try
         {
-        for(var i=0;i<10;i++)
-        {       
-                var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
-                runDetails.push({
-                key: data[i].name,
-                value: percentage
+                client.get(api_url,loginArgs,function(data,response)
+                {                        
+                        for(var i=0;i<10;i++)
+                        {      
+                                console.log("Run Name = " + data[i].name);
+                                var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
+                                runDetails.push({
+                                key: data[i].name,
+                                value: percentage
+                                });
+                        }
+                        callback(runDetails);
                 });
+                
         }
-        });
-        return runDetails;
+        catch(err)
+        {
+                console.log(err);
+        }
 }

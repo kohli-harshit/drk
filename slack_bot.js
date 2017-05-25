@@ -11,6 +11,7 @@ var Botkit = require('./lib/Botkit.js'),
         storage: mongoStorage
     });
 var db = require('./db_operations.js');
+var db = require('./testrail_operations.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
@@ -201,6 +202,53 @@ controller.hears(['want a free virtual machine', 'assign a machine', 'assign a v
         }
     });
     
+});
+
+controller.hears(['phone number for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    bot.api.users.info({user: message.match[0]}, function(err, list){
+    bot.reply(message, "response goes here");
+    console.log(message.match[0] + "Response = " + list);
+  });
+});
+
+//When user want a project run status
+controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message){
+    bot.startConversation(message, function(err, convo) {
+        if (!err){            
+                convo.ask('Do you want to see the last 10 results for ' + message.match[1] + ' Project ?',[
+                    {   
+                        pattern: 'yes',
+                        callback: function(response, convo) {
+                        try
+                        {
+                            getProjectId(message.match[1], function(projectId) {                                
+                                if(typeof projectId==='number' && (projectId%1)===0) {
+                                    getRunDetails(projectId, function(runDetails) {
+                                        bot.reply(message,' The project run details are as follows:-',function(){
+                                            for (index = 0, len = runDetails.length; index < len; ++index) {
+                                                bot.reply(message, runDetails[index].key + " (Pass Percentage = " + runDetails[index].value +"\%)");
+                                            }
+                                        });
+                                    });
+                                };
+                            });                            
+                        }catch (err){
+                            console.log(err);
+                            bot.reply(message, ':flushed: Oops ! Something went wrong here...Please try again later.');
+                        }                        
+                            convo.next();
+                        }
+                    },
+                    {
+                        pattern: 'no',
+                        callback: function(response, convo) {
+                            bot.reply(message,'Ok! Nevermind..... call me anytime you want assistance');
+                            convo.stop();
+                        }
+                    }
+                ]);
+    }    
+    });
 });
 
 function formatUptime(uptime) {
