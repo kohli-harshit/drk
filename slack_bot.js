@@ -16,6 +16,7 @@ var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
 var Q = require('q');
+var async = require('async');
 
 //This is for again opening connection if it closes 
 function start_rtm() {
@@ -153,23 +154,21 @@ controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your na
 });
 
 //User want to know status of a machine 
-controller.hears(['who is using (.*)','what is the status of (.*)','i want to use (.*)'],'direct_message,direct_mention,mention',function(bot,message) {
-   try{var inputString=message.match[1];
-       if(inputString.indexOf("?") != -1)
-        { 
-            var finalInputString=inputString.substring(0, inputString.indexOf("?")); 
+controller.hears(['who is using (.*)', 'what is the status of (.*)', 'i want to use (.*)'], 'direct_message,direct_mention,mention', function (bot, message) {
+    try {
+        var inputString = message.match[1];
+        if (inputString.indexOf("?") != -1) {
+            var finalInputString = inputString.substring(0, inputString.indexOf("?"));
         }
-        else if(inputString.indexOf(".") != -1)       
-        { 
-            var finalInputString=inputString.substring(0, inputString.indexOf(".")); 
+        else if (inputString.indexOf(".") != -1) {
+            var finalInputString = inputString.substring(0, inputString.indexOf("."));
         }
-        else 
-        { 
-            var finalInputString=inputString; 
+        else {
+            var finalInputString = inputString;
         }
-            
-        getMachineInfo(finalInputString, function(machineAssignee) {
-            bot.reply(message,machineAssignee);
+
+        getMachineInfo(finalInputString, function (machineAssignee) {
+            bot.reply(message, machineAssignee);
         });
     } catch (err) {
         console.log(err);
@@ -179,13 +178,13 @@ controller.hears(['who is using (.*)','what is the status of (.*)','i want to us
 
 //When user want a Free Virtual Machine.
 controller.hears(['want a free virtual machine', 'assign a machine', 'assign a virtual machine', 'want a free machine', 'need a free machine', 'want a VM', 'need a VM', 'want a free VM', 'need a free VM'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-    
-    
+
+
     bot.reply(message, 'Looking for machines....', function (err, message) {
         try {
             getFreeMachine(function (searchFreeMachine) {
 
-                if (searchFreeMachine[0] != null) {                    
+                if (searchFreeMachine[0] != null) {
                     bot.reply(message, 'Following machines are not logged in by any user right now:-', function () {
                         for (index = 0, len = searchFreeMachine.length; index < len; ++index) {
                             bot.reply(message, searchFreeMachine[index]);
@@ -201,53 +200,88 @@ controller.hears(['want a free virtual machine', 'assign a machine', 'assign a v
             bot.reply(message, ':flushed: Oops ! Failed to get free machines list...Please try again later.');
         }
     });
-    
+
 });
 
 controller.hears(['phone number for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-    bot.api.users.info({user: message.match[0]}, function(err, list){
-    bot.reply(message, "response goes here");
-    console.log(message.match[0] + "Response = " + list);
-  });
+    bot.api.users.info({ user: message.match[0] }, function (err, list) {
+        bot.reply(message, "response goes here");
+        console.log(message.match[0] + "Response = " + list);
+    });
 });
 
 //When user want a project run status
-controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message){
-    bot.startConversation(message, function(err, convo) {
-        if (!err){            
-                convo.ask('Do you want to see the last 10 results for ' + message.match[1] + ' Project ?',[
-                    {   
-                        pattern: 'yes',
-                        callback: function(response, convo) {
-                        try
-                        {
-                            getProjectId(message.match[1], function(projectId) {                                
-                                if(typeof projectId==='number' && (projectId%1)===0) {
-                                    getRunDetails(projectId, function(runDetails) {
-                                        bot.reply(message,' The project run details are as follows:-',function(){
-                                            for (index = 0, len = runDetails.length; index < len; ++index) {
-                                                bot.reply(message, runDetails[index].key + " (Pass Percentage = " + runDetails[index].value +"\%)");
-                                            }
+controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    bot.startConversation(message, function (err, convo) {
+        if (!err) {
+            convo.ask('Do you want to see the last 10 results for \"' + message.match[1] + '\" Project ?', [
+                {
+                    pattern: 'yes',
+                    callback: function (response, convo) {
+                        try {
+                            getProjectId(message.match[1], function (projectId) {
+                                if (typeof projectId === 'number' && (projectId % 1) === 0) {
+                                    getRunDetails(projectId, function (runDetails) {
+                                        bot.reply(message, ' The project run details are as follows:-', function () {
+                                            var sum=0;
+                                            var count=0;
+                                            var runInfo;
+                                            async.eachSeries(runDetails, function (runDetail, callback) {                                                                                    
+                                                if(isNaN(runDetail.value))
+                                                {
+                                                    count = count+1;
+                                                    runInfo = "(No Test Case Info Available)";
+                                                }
+                                                else
+                                                {
+                                                    sum = sum + runDetail.value;
+                                                    count = count+1;
+                                                    runInfo = "(Pass Percentage = " + parseFloat(Math.round(runDetail.value * 100) / 100).toFixed(2) + "\%)";
+                                                }
+                                                bot.reply(message, runDetail.key + " " + runInfo, function (err, sent) {                                                    
+                                                    callback();
+                                                });
+                                            },function()
+                                            {
+                                                var avg = sum/count;
+                                                avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
+                                                if(avg>=90)
+                                                {
+                                                    bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
+                                                }
+                                                else if(avg<90 && avg>=80)
+                                                {
+                                                    bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
+                                                }
+                                                else
+                                                {
+                                                    bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
+                                                }                                                
+                                            });
+                                            
                                         });
                                     });
+                                }
+                                else{
+                                    bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project');
                                 };
-                            });                            
-                        }catch (err){
+                            });
+                        } catch (err) {
                             console.log(err);
                             bot.reply(message, ':flushed: Oops ! Something went wrong here...Please try again later.');
-                        }                        
-                            convo.next();
                         }
-                    },
-                    {
-                        pattern: 'no',
-                        callback: function(response, convo) {
-                            bot.reply(message,'Ok! Nevermind..... call me anytime you want assistance');
-                            convo.stop();
-                        }
+                        convo.next();
                     }
-                ]);
-    }    
+                },
+                {
+                    pattern: 'no',
+                    callback: function (response, convo) {
+                        bot.reply(message, 'Ok! Nevermind..... call me anytime you want assistance');
+                        convo.stop();
+                    }
+                }
+            ]);
+        }
     });
 });
 
