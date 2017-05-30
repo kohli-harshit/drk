@@ -218,49 +218,64 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                 {
                     pattern: 'yes',
                     callback: function (response, convo) {
-                        try {
-                            getProjectId(message.match[1], function (projectId) {
-                                if (typeof projectId === 'number' && (projectId % 1) === 0) {
-                                    getRunDetails(projectId, function (runDetails) {
-                                        bot.reply(message, ' The project run details are as follows:-', function () {
-                                            var sum=0;
-                                            var count=0;
-                                            var runInfo;
-                                            async.eachSeries(runDetails, function (runDetail, callback) {                                                                                    
-                                                if(isNaN(runDetail.value))
+                        try {                            
+                            getProjectId(message.match[1], function (Ids,callback) {
+                                if (Ids.length===1) {
+
+                                    convo.say('Saying something');
+                                    bot.reply(message, 'Saying something bot');
+                                    //convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
+                                    convo.ask('Please enter a choice', [{
+                                        pattern: '[1-3]',
+                                        callback: function (response, convo) {
+                                            getRunDetails(Ids[0], response, function (runDetails) {
+                                                bot.reply(message, ' The project run details are as follows:-', function () {
+                                                var sum=0;
+                                                var count=0;
+                                                var runInfo;
+                                                async.eachSeries(runDetails, function (runDetail, callback) {                                                                                    
+                                                    if(isNaN(runDetail.value))
+                                                    {
+                                                        count = count+1;
+                                                        runInfo = "(No Test Case Info Available)";
+                                                    }
+                                                    else
+                                                    {
+                                                        sum = sum + runDetail.value;
+                                                        count = count+1;
+                                                        runInfo = "(Pass Percentage = " + parseFloat(Math.round(runDetail.value * 100) / 100).toFixed(2) + "\%)";
+                                                    }
+                                                    bot.reply(message, runDetail.key + " " + runInfo, function (err, sent) {                                                    
+                                                        callback();
+                                                    });
+                                                },function()
                                                 {
-                                                    count = count+1;
-                                                    runInfo = "(No Test Case Info Available)";
-                                                }
-                                                else
-                                                {
-                                                    sum = sum + runDetail.value;
-                                                    count = count+1;
-                                                    runInfo = "(Pass Percentage = " + parseFloat(Math.round(runDetail.value * 100) / 100).toFixed(2) + "\%)";
-                                                }
-                                                bot.reply(message, runDetail.key + " " + runInfo, function (err, sent) {                                                    
-                                                    callback();
+                                                    var avg = sum/count;
+                                                    avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
+                                                    if(avg>=90)
+                                                    {
+                                                        bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
+                                                    }
+                                                    else if(avg<90 && avg>=80)
+                                                    {
+                                                        bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
+                                                    }
+                                                    else
+                                                    {
+                                                        bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
+                                                    }                                                
                                                 });
-                                            },function()
-                                            {
-                                                var avg = sum/count;
-                                                avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
-                                                if(avg>=90)
-                                                {
-                                                    bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
-                                                }
-                                                else if(avg<90 && avg>=80)
-                                                {
-                                                    bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
-                                                }
-                                                else
-                                                {
-                                                    bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
-                                                }                                                
+                                                
                                             });
-                                            
                                         });
-                                    });
+                                    }},
+                                    {
+                                        pattern: '*',
+                                        callback: function (response, convo) {
+                                             bot.reply(message, 'Input not supported');
+                                             convo.repeat();
+                                        }
+                                    }]);
                                 }
                                 else{
                                     bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project');
@@ -276,7 +291,7 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                 {
                     pattern: 'no',
                     callback: function (response, convo) {
-                        bot.reply(message, 'Ok! Nevermind..... call me anytime you want assistance');
+                        bot.reply(message, 'No issues. Hope you have a great day!');
                         convo.stop();
                     }
                 }
