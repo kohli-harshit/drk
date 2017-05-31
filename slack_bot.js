@@ -218,17 +218,16 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                 {
                     pattern: 'yes',
                     callback: function (response, convo) {
-                        try {                            
-                            getProjectId(message.match[1], function (Ids,callback) {
+                        try {  
+                            bot.startConversation(message,function(err,convo)
+                            {                          
+                              getProjectId(message.match[1], function (Ids,callback) {
                                 if (Ids.length===1) {
-
-                                    convo.say('Saying something');
-                                    bot.reply(message, 'Saying something bot');
-                                    //convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
-                                    convo.ask('Please enter a choice', [{
+                                    convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
                                         pattern: '[1-3]',
                                         callback: function (response, convo) {
-                                            getRunDetails(Ids[0], response, function (runDetails) {
+                                            getRunDetails(Ids[0], parseInt(response.text), function (runDetails) {
+                                                console.log('returned');
                                                 bot.reply(message, ' The project run details are as follows:-', function () {
                                                 var sum=0;
                                                 var count=0;
@@ -265,7 +264,7 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                                         bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
                                                     }                                                
                                                 });
-                                                
+                                                convo.stop();
                                             });
                                         });
                                     }},
@@ -280,6 +279,7 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                 else{
                                     bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project');
                                 };
+                              });
                             });
                         } catch (err) {
                             console.log(err);
@@ -299,7 +299,6 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
         }
     });
 });
-
 function formatUptime(uptime) {
     var unit = 'second';
     if (uptime > 60) {
