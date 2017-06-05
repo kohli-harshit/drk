@@ -59,19 +59,18 @@ getProjectId = function (name,callback)
         }
 }
       
-getRunDetails = function (id,choice,bot,message,convo,callback)
+getRunDetails = function (id,choice,callback)
 {      
         var runDetails=[];               
         
         var getUrl_Promise=Q.denodeify(getUrl);
-        var result=getUrl(id);                        
+        var result=getUrl(id.value);                        
          result.then
            {      
                 try
                 {
                 
                         var client = new Client();
-
                         client.get(result, args, function(data,response)
                              {                             
                                 if(data.length!=0)
@@ -122,9 +121,7 @@ getRunDetails = function (id,choice,bot,message,convo,callback)
                                 } 
                                 else
                                 {
-                                        bot.reply(message, 'There is no run associated with this project');
-                                        console.log("Oops..! There is no runs associated to Your Project");
-                                        convo.stop();
+                                        consol.log("Oops..! There is no runs associated to Your Project");
                                 }       
                         });
                         
