@@ -122,7 +122,7 @@ getRunDetails = function (id,choice,bot,message,convo,callback)
                                 } 
                                 else
                                 {
-                                        bot.reply(message, 'There is no run associated with this project');
+                                        bot.reply(message,':neutral_face:No test runs found for the project! Looks like it need some testing:neutral_face:');
                                         console.log("Oops..! There is no runs associated to Your Project");
                                         convo.stop();
                                 }       

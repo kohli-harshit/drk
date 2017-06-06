@@ -11,7 +11,8 @@ var Botkit = require('./lib/Botkit.js'),
         storage: mongoStorage
     });
 var db = require('./db_operations.js');
-var db = require('./testrail_operations.js');
+var testrail_operation = require('./testrail_operations.js');
+var jira_operation = require('./jira_operation.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
@@ -214,7 +215,7 @@ controller.hears(['phone number for (.*)'], 'direct_message,direct_mention,messa
 controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.startConversation(message, function (err, convo) {
         if (!err) {
-            convo.ask('Do you want to see the results for \"' + message.match[1] + '\" Project ?', [
+            convo.ask('Do you want to see TestRail run information about project(s) having name \"' + message.match[1] + '\" ?', [
                 {
                     pattern: 'yes',
                     callback: function (response, convo) {
@@ -232,13 +233,26 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                            }); 
                                            },function()
                                            {
+                                            var flag=0;
                                             convo.ask(' Please Enter Project Id corresponding to project listed above', [{ 
                                             pattern: '[1-9][0-9]{0,2}',
                                             callback: function (response, convo) {
                                             var projectId=parseInt(response.text);
-                                            convo.stop();
-                                            bot.startConversation(message,function(err,convo)
+                                            async.eachSeries(Ids, function (Ids, callback) {        
+                                                if(Ids.value===projectId)
                                                 {
+                                                flag=1;
+                                                } 
+                                                callback();
+                                            },
+                                           function()
+                                           {
+                                               if(flag==1)
+                                               {
+                                                convo.stop();
+                                                bot.startConversation(message,function(err,convo)
+                                                    {
+                                                            
                                                         convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
                                                         pattern: '[1-3]',
                                                         callback: function (response, convo) {
@@ -291,6 +305,13 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                                     }
                                                 }]);
                                                });
+                                            }
+                                            else
+                                            {
+                                                bot.reply(message,':flushed: Wrong ProjectId! Please Enter only from above mentioned projectIds')
+                                                convo.repeat();
+                                            }
+                                           });
                                               }
                                               },
                                               {
@@ -309,7 +330,7 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                     convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
                                         pattern: '[1-3]',
                                         callback: function (response, convo) {
-                                            getRunDetails(Ids[0].value, parseInt(response.text), function (runDetails) {
+                                            getRunDetails(Ids[0].value, parseInt(response.text),bot,message,convo, function (runDetails) {
                                                 bot.reply(message, ' The project run details are as follows:-', function () {
                                                 var sum=0;
                                                 var count=0;
@@ -359,7 +380,7 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                     }]);
                                 }
                                 else{
-                                    bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project');
+                                    bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project :flushed:');
                                     convo.stop();    
                             };
                               });
@@ -380,6 +401,27 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                 }
             ]);
         }
+    });
+});
+  
+
+//For task searching
+controller.hears(['jira task info from taskid (.*)','jira task status from taskid (.*)','jira task info from task id (.*)','jira task status from task id(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+            getInformationById(message.match[1],convo,message,bot, function (SearchResult) {
+            bot.reply(message,'Informations related to '+ message.match[1]+' are as follows',function(){
+              bot.reply(message,'TaskId: '+SearchResult.TaskId+"\n"+
+                 'TaskType: '+SearchResult.TaskType+"\n"+
+                 'ParentId: '+ SearchResult.ParentId+"\n"+
+                 'ProjectName: '+SearchResult.ProjectName+"\n"+
+                 'OriginalEstimates: '+SearchResult.OriginalEstimates+"\n"+
+                 'RemainingEstimates: '+SearchResult.RemainingEstimates+"\n"+
+                 'Summary: ' +SearchResult.Summary+"\n"+
+                 'Creator: '+SearchResult.Creator+"\n"+
+                 'Reporter: '+SearchResult.Reporter+"\n"+
+                 'Assignee: '+SearchResult.Assignee+"\n"+
+                 'Status: '+SearchResult.Status+"\n")
+            })
+            console.log(SearchResult);
     });
 });
 function formatUptime(uptime) {
