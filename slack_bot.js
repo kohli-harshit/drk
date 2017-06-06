@@ -214,20 +214,102 @@ controller.hears(['phone number for (.*)'], 'direct_message,direct_mention,messa
 controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.startConversation(message, function (err, convo) {
         if (!err) {
-            convo.ask('Do you want to see the last 10 results for \"' + message.match[1] + '\" Project ?', [
+            convo.ask('Do you want to see the results for \"' + message.match[1] + '\" Project ?', [
                 {
                     pattern: 'yes',
                     callback: function (response, convo) {
                         try {  
-                            bot.startConversation(message,function(err,convo)
-                            {                          
-                              getProjectId(message.match[1], function (Ids,callback) {
-                                if (Ids.length===1) {
+                             bot.startConversation(message,function(err,convo)
+                                {                          
+                                getProjectId(message.match[1], function (Ids,callback) {
+                                if(Ids.length>1)
+                                 {
+                                   bot.reply(message, 'There are multiple projects with the name '+message.match[1]+'. These are as follows :-',function()
+                                   {          
+                                          async.eachSeries(Ids, function (Ids, callback) {                                                                                   
+                                          bot.reply(message, 'Project Id:= '+Ids.value + '  Project Name:=' + Ids.key, function (err, sent) {                                                    
+                                                                    callback();
+                                           }); 
+                                           },function()
+                                           {
+                                            convo.ask(' Please Enter Project Id corresponding to project listed above', [{ 
+                                            pattern: '[1-9][0-9]{0,2}',
+                                            callback: function (response, convo) {
+                                            var projectId=parseInt(response.text);
+                                            convo.stop();
+                                            bot.startConversation(message,function(err,convo)
+                                                {
+                                                        convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
+                                                        pattern: '[1-3]',
+                                                        callback: function (response, convo) {
+                                                        getRunDetails(projectId, parseInt(response.text),bot,message,convo, function (runDetails) {
+                                                        bot.reply(message, ' The project run details are as follows:-', function () {
+                                                            var sum=0;
+                                                            var count=0;
+                                                            var runInfo;
+                                                            async.eachSeries(runDetails, function (runDetail, callback) {                                                                                    
+                                                                if(isNaN(runDetail.value))
+                                                                {
+                                                                    count = count+1;
+                                                                    runInfo = "(No Test Case Info Available)";
+                                                                }
+                                                                else
+                                                                {
+                                                                    sum = sum + runDetail.value;
+                                                                    count = count+1;
+                                                                    runInfo = "(Pass Percentage = " + parseFloat(Math.round(runDetail.value * 100) / 100).toFixed(2) + "\%)";
+                                                                }
+                                                                bot.reply(message, runDetail.key + " " + runInfo, function (err, sent) {                                                    
+                                                                    callback();
+                                                                });
+                                                            },function()
+                                                            {
+                                                                var avg = sum/count;
+                                                                avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
+                                                                if(avg>=90)
+                                                                {
+                                                                    bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
+                                                                }
+                                                                else if(avg<90 && avg>=80)
+                                                                {
+                                                                    bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
+                                                                }
+                                                                else
+                                                                {
+                                                                    bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
+                                                                }                                                
+                                                            });
+                                                            convo.stop();
+                                                        });
+                                                    });
+                                                }},
+                                                {
+                                                    pattern: '*',
+                                                    callback: function (response, convo) {
+                                                        bot.reply(message, 'Input not supported');
+                                                        convo.repeat();
+                                                    }
+                                                }]);
+                                               });
+                                              }
+                                              },
+                                              {
+                                                    pattern: '*',
+                                                    callback: function (response, convo) {
+                                                        bot.reply(message, 'Input not supported');
+                                                        convo.repeat();
+                                                }
+                                               }]);     
+                                            }
+                                        );
+                                    });
+                                 
+                                }
+                                else if (Ids.length===1) {
                                     convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
                                         pattern: '[1-3]',
                                         callback: function (response, convo) {
-                                            getRunDetails(Ids[0], parseInt(response.text), function (runDetails) {
-                                                console.log('returned');
+                                            getRunDetails(Ids[0].value, parseInt(response.text), function (runDetails) {
                                                 bot.reply(message, ' The project run details are as follows:-', function () {
                                                 var sum=0;
                                                 var count=0;
@@ -278,14 +360,15 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                 }
                                 else{
                                     bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project');
-                                };
+                                    convo.stop();    
+                            };
                               });
                             });
                         } catch (err) {
                             console.log(err);
                             bot.reply(message, ':flushed: Oops ! Something went wrong here...Please try again later.');
                         }
-                        convo.next();
+                        convo.stop();
                     }
                 },
                 {
