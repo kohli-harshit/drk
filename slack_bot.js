@@ -407,23 +407,55 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
 
 //For task searching
 controller.hears(['jira task info from taskid (.*)','jira task status from taskid (.*)','jira task info from task id (.*)','jira task status from task id(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-            getInformationById(message.match[1],convo,message,bot, function (SearchResult) {
+          bot.startConversation(message, function (err, convo) {
+            getInformationById(message.match[1], convo,message,bot, function (searchResult) {
             bot.reply(message,'Informations related to '+ message.match[1]+' are as follows',function(){
-              bot.reply(message,'TaskId: '+SearchResult.TaskId+"\n"+
-                 'TaskType: '+SearchResult.TaskType+"\n"+
-                 'ParentId: '+ SearchResult.ParentId+"\n"+
-                 'ProjectName: '+SearchResult.ProjectName+"\n"+
-                 'OriginalEstimates: '+SearchResult.OriginalEstimates+"\n"+
-                 'RemainingEstimates: '+SearchResult.RemainingEstimates+"\n"+
-                 'Summary: ' +SearchResult.Summary+"\n"+
-                 'Creator: '+SearchResult.Creator+"\n"+
-                 'Reporter: '+SearchResult.Reporter+"\n"+
-                 'Assignee: '+SearchResult.Assignee+"\n"+
-                 'Status: '+SearchResult.Status+"\n")
-            })
-            console.log(SearchResult);
+              bot.reply(message,'TaskId: '+searchResult.key+"\n"+
+                 'TaskType: '+searchResult.fields.issuetype.name+"\n"+
+                 'ParentId: '+ searchResult.fields.parent.key+"\n"+
+                 'ProjectName: '+searchResult.fields.project.name+"\n"+
+                 'OriginalEstimates: '+searchResult.fields.timetracking.originalEstimate+"\n"+
+                 'RemainingEstimates: '+searchResult.fields.timetracking.remainingEstimate+"\n"+
+                 'Task Name: ' +searchResult.fields.summary+"\n"+
+                 'Creator: '+searchResult.fields.creator.displayName+"\n"+
+                 'Reporter: '+searchResult.fields.reporter.displayName+"\n"+
+                 'Assignee: '+searchResult.fields.assignee.displayName+"\n"+
+                 'Status: '+ searchResult.fields.status.name+"\n")
+            });
     });
 });
+});
+//For jira Tasks of a user
+controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+            bot.startConversation(message, function (err, convo) {
+            getInformationForUser(message.match[1], convo,message,bot, function (searchResult) {
+            bot.reply(message,'All tasks in currently active sprints assigned to user '+ message.match[1]+' are as follows',function(){
+            var counter=0;
+            for(var index=0;index<searchResult.total;index++)
+            {                                                                                      
+                    bot.reply(message, searchResult.issues[index].key+" : https://jira.monotype.com/browse/"+searchResult.issues[index].key);
+            }
+});
+})
+})
+});
+/*
+//For user comment on jira
+controller.hears(['put a comment on jira task (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+            bot.startConversation(message, function (err, convo) {
+                getInformationById(message.match[1], convo,message,bot, function (searchResult) {
+                convo.ask('Please enter comment you want to put on jira', [{ 
+                    pattern: '*',
+                    callback: function (response, convo) {                            
+                    putCommentOnJira(message.match[1],response.text, convo,message,bot, function (searchResult) {                                                                                     
+                                bot.reply(message, searchResult);
+                }); 
+             }
+         }]
+        );  
+        })
+    });
+});*/
 function formatUptime(uptime) {
     var unit = 'second';
     if (uptime > 60) {

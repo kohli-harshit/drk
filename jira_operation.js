@@ -7,6 +7,16 @@ getUrl=function(id)
    var jira_url=baseUrl + "issue/" + id; 
    return jira_url;
 }
+getUrlForUser=function(userName)
+{
+   var jira_url=baseUrl + "search?jql=assignee in ("+userName+") AND sprint in openSprints()";
+   return jira_url;
+}
+getUrlForComment=function(taskId)
+{
+   var jira_url=baseUrl + "issue/"+taskId+"/comment";
+   return jira_url;
+}
 // Provide user credentials, which will be used to log in to JIRA.
 var searchArgs = {
 
@@ -15,25 +25,14 @@ var searchArgs = {
                 "Authorization": "Basic c3NoYXJtYTpHb29nbGVAMTIzNA=="
                  } 
 };
-getSearchResultFormatted = function(searchResult)
-{
-        var Info=[];
-        Info.push({
-                 TaskId: searchResult.key,
-                 TaskType: searchResult.fields.issuetype.name,
-                 ParentId: searchResult.fields.parent.key,
-                 ProjectName:searchResult.fields.project.name,
-                 OriginalEstimates: searchResult.timetracking.originalEstimates,
-                 RemainingEstimates: searchResult.timetracking.remainingEstimates,
-                 TaskName: searchResul.fields.summary,
-                 Creator: searchResult.fields.creator.displayName,
-                 Reporter: searchResult.fields.reporter.displayName,
-                 Assignee: searchResult.fields.assignee.displayName,
-                 Status: searchResult.fields.status.name
-               });
-                        console.log(Info);                     				
-                        return Id;
-}
+var argsForPost = {
+        data: { body: "hello" },
+        headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Basic c3NoYXJtYTpHb29nbGVAMTIzNA=="
+                 } 
+};
+
 getInformationById = function (taskId,convo,message,bot,callback)
 {
  
@@ -45,24 +44,78 @@ result.then
    client.get(result, searchArgs, function(searchResult, response)
        {        
                 console.log(response.statusCode);
-                console.log('search result:', searchResult);
                 if(response.statusCode=='200')
                   {
-                        var getSearchResultFormatted_Promise=Q.denodeify(getSearchResultFormatted);
-                        var result=getSearchResultFormatted(searchResult);                        
-                        result.then
-                        {                                
-                        callback(result);}
-                  }
-                      else{
-                   bot.reply(message,'There is no issue with this taskid, Please recheck it');
-                   convo.stop();   
-                }    
+                        callback(searchResult);         
+                  }  
+                  else
+                  {
+                    bot.reply(message,':flushed:There is no issue with this taskid, Please recheck it:flushed:');
+                    convo.stop();   
+                  }    
         });
 
 }catch(err)
 {
 console.log('error is' +err);
+  }
+ }
 }
+
+getInformationForUser = function (userName,convo,message,bot,callback)
+{
+ 
+client = new Client();            
+var getUrl_Promise=Q.denodeify(getUrlForUser);
+var result=getUrlForUser(userName);                        
+result.then
+ {   try{    
+   client.get(result, searchArgs, function(searchResult, response)
+       {        
+                console.log(response.statusCode);
+                if(response.statusCode=='200')
+                  {
+                        callback(searchResult);         
+                  }  
+                  else
+                  {
+                    bot.reply(message,'":flushed:There is currently no task on this users plate! please retry later:flushed:');
+                    convo.stop();   
+                  }    
+        });
+
+}catch(err)
+{
+console.log('error is' +err);
+  }
+ }
+}
+putCommentOnJira = function (taskId,comment,convo,message,bot,callback)
+{
+ 
+client = new Client();            
+var getUrl_Promise=Q.denodeify(getUrlForComment);
+var result=getUrlForComment(taskId);                        
+result.then
+ {   try{    
+   client.post(result, argsForPost, function(searchResult, response)
+       {        
+                console.log(response.statusCode);
+                console.log(searchResult);
+                if(response.statusCode=='200')
+                  {
+                        callback(searchResult);         
+                  }  
+                  else
+                  {
+                    bot.reply(message,'":flushed:There is currently no task on this users plate! please retry later:flushed:');
+                    convo.stop();   
+                  }    
+        });
+
+}catch(err)
+{
+console.log('error is' +err);
+  }
  }
 }
