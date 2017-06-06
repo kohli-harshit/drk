@@ -11,7 +11,9 @@ var Botkit = require('./lib/Botkit.js'),
         storage: mongoStorage
     });
 var db = require('./db_operations.js');
-var db = require('./testrail_operations.js');
+var testrail = require('./testrail_operations.js');
+var jira= require('./jira_operation.js');
+var jenkins = require('./jenkinsOperation.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
@@ -297,6 +299,25 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                 }
             ]);
         }
+    });
+});
+//For task s
+controller.hears(['jira task info from taskid (.*)','jira task status from taskid (.*)','jira task info from task id (.*)','jira task status from task id(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+            getInformationById(message.match[1],convo,message,bot, function (SearchResult) {
+            bot.reply(message,'Informations related to '+ message.match[1]+' are as follows',function(){
+              bot.reply(message,'TaskId: '+SearchResult.TaskId+"\n"+
+                 'TaskType: '+SearchResult.TaskType+"\n"+
+                 'ParentId: '+ SearchResult.ParentId+"\n"+
+                 'ProjectName: '+SearchResult.ProjectName+"\n"+
+                 'OriginalEstimates: '+SearchResult.OriginalEstimates+"\n"+
+                 'RemainingEstimates: '+SearchResult.RemainingEstimates+"\n"+
+                 'Summary: ' +SearchResult.Summary+"\n"+
+                 'Creator: '+SearchResult.Creator+"\n"+
+                 'Reporter: '+SearchResult.Reporter+"\n"+
+                 'Assignee: '+SearchResult.Assignee+"\n"+
+                 'Status: '+SearchResult.Status+"\n")
+            })
+            console.log(SearchResult);
     });
 });
 function formatUptime(uptime) {
