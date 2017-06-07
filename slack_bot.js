@@ -204,10 +204,21 @@ controller.hears(['want a free virtual machine', 'assign a machine', 'assign a v
 
 });
 
-controller.hears(['phone number for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-    bot.api.users.info({ user: message.match[0] }, function (err, list) {
-        bot.reply(message, "response goes here");
-        console.log(message.match[0] + "Response = " + list);
+controller.hears(['phone number for (.*)','need to call (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    getUserPhone(message.match[1],function(phone)
+    {
+        if(phone=="Not Found")
+        {
+            bot.reply(message, "No User found with name - " + message.match[1]);
+        }
+        else if(phone =="Number not present" )
+        {
+            bot.reply(message,":angry: Looks like " + message.match[1] +  " has not updated his Phone number in Slack :angry:");            
+        }
+        else
+        {
+            bot.reply(message, "Phone Number for " + message.match[1] + " is " + phone);
+        }
     });
 });
 
@@ -485,23 +496,28 @@ controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_men
 })
 })
 });
-/*
-//For user comment on jira
-controller.hears(['put a comment on jira task (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-            bot.startConversation(message, function (err, convo) {
-                getInformationById(message.match[1], convo,message,bot, function (searchResult) {
-                convo.ask('Please enter comment you want to put on jira', [{ 
-                    pattern: '*',
-                    callback: function (response, convo) {                            
-                    putCommentOnJira(message.match[1],response.text, convo,message,bot, function (searchResult) {                                                                                     
-                                bot.reply(message, searchResult);
-                }); 
-             }
-         }]
-        );  
-        })
+
+
+function getUserPhone(username,callback) {
+    bot.api.users.list({},function (err,list) {        
+        var user = list.members.find(member => (member.real_name.toString().toLowerCase()===username.toString().toLowerCase()) || (member.name.toString().toLowerCase()===username.toString().toLowerCase()) || (member.profile.first_name.toString().toLowerCase().indexOf(username.toString().toLowerCase())!=-1));
+        if(user)
+        {
+            if(user.profile.phone)
+            {
+                callback(user.profile.phone);
+            }
+            else
+            {
+                callback("Number not present");
+            }
+        }
+        else
+        {
+            callback("Not Found");
+        }
     });
-});*/
+}
 
 function formatUptime(uptime) {
     var unit = 'second';
