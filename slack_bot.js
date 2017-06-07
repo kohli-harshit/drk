@@ -11,7 +11,8 @@ var Botkit = require('./lib/Botkit.js'),
         storage: mongoStorage
     });
 var db = require('./db_operations.js');
-var db = require('./testrail_operations.js');
+var testrail = require('./testrail_operations.js');
+var jira = require('./jira_operation.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
@@ -214,20 +215,122 @@ controller.hears(['phone number for (.*)'], 'direct_message,direct_mention,messa
 controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.startConversation(message, function (err, convo) {
         if (!err) {
-            convo.ask('Do you want to see the last 10 results for \"' + message.match[1] + '\" Project ?', [
+            convo.ask('Do you want to see TestRail run information about project(s) having name \"' + message.match[1] + '\" ?', [
                 {
                     pattern: 'yes',
                     callback: function (response, convo) {
                         try {  
-                            bot.startConversation(message,function(err,convo)
-                            {                          
-                              getProjectId(message.match[1], function (Ids,callback) {
-                                if (Ids.length===1) {
+                             bot.startConversation(message,function(err,convo)
+                                {                          
+                                getProjectId(message.match[1], function (Ids,callback) {
+                                if(Ids.length>1)
+                                 {
+                                   bot.reply(message, 'There are multiple projects with the name '+message.match[1]+'. These are as follows :-',function()
+                                   {          
+                                          async.eachSeries(Ids, function (Ids, callback) {                                                                                   
+                                          bot.reply(message, 'Project Id:= '+Ids.value + '  Project Name:=' + Ids.key, function (err, sent) {                                                    
+                                                                    callback();
+                                           }); 
+                                           },function()
+                                           {
+                                            var flag=0;
+                                            convo.ask(' Please Enter Project Id corresponding to project listed above', [{ 
+                                            pattern: '[1-9][0-9]{0,2}',
+                                            callback: function (response, convo) {
+                                            var projectId=parseInt(response.text);
+                                            async.eachSeries(Ids, function (Ids, callback) {        
+                                                if(Ids.value===projectId)
+                                                {
+                                                flag=1;
+                                                } 
+                                                callback();
+                                            },
+                                           function()
+                                           {
+                                               if(flag==1)
+                                               {
+                                                convo.stop();
+                                                bot.startConversation(message,function(err,convo)
+                                                    {
+                                                            
+                                                        convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
+                                                        pattern: '[1-3]',
+                                                        callback: function (response, convo) {
+                                                        getRunDetails(projectId, parseInt(response.text),bot,message,convo, function (runDetails) {
+                                                        bot.reply(message, ' The project run details are as follows:-', function () {
+                                                            var sum=0;
+                                                            var count=0;
+                                                            var runInfo;
+                                                            async.eachSeries(runDetails, function (runDetail, callback) {                                                                                    
+                                                                if(isNaN(runDetail.value))
+                                                                {
+                                                                    count = count+1;
+                                                                    runInfo = "(No Test Case Info Available)";
+                                                                }
+                                                                else
+                                                                {
+                                                                    sum = sum + runDetail.value;
+                                                                    count = count+1;
+                                                                    runInfo = "(Pass Percentage = " + parseFloat(Math.round(runDetail.value * 100) / 100).toFixed(2) + "\%)";
+                                                                }
+                                                                bot.reply(message, runDetail.key + " " + runInfo, function (err, sent) {                                                    
+                                                                    callback();
+                                                                });
+                                                            },function()
+                                                            {
+                                                                var avg = sum/count;
+                                                                avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
+                                                                if(avg>=90)
+                                                                {
+                                                                    bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
+                                                                }
+                                                                else if(avg<90 && avg>=80)
+                                                                {
+                                                                    bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
+                                                                }
+                                                                else
+                                                                {
+                                                                    bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
+                                                                }                                                
+                                                            });
+                                                            convo.stop();
+                                                        });
+                                                    });
+                                                }},
+                                                {
+                                                    pattern: '*',
+                                                    callback: function (response, convo) {
+                                                        bot.reply(message, 'Input not supported');
+                                                        convo.repeat();
+                                                    }
+                                                }]);
+                                               });
+                                            }
+                                            else
+                                            {
+                                                bot.reply(message,':flushed: Wrong ProjectId! Please Enter only from above mentioned projectIds')
+                                                convo.repeat();
+                                            }
+                                           });
+                                              }
+                                              },
+                                              {
+                                                    pattern: '*',
+                                                    callback: function (response, convo) {
+                                                        bot.reply(message, 'Input not supported');
+                                                        convo.repeat();
+                                                }
+                                               }]);     
+                                            }
+                                        );
+                                    });
+                                 
+                                }
+                                else if (Ids.length===1) {
                                     convo.ask('Please enter a choice(1,2 or 3):-\n1. All Runs\n2. Closed Runs Only\n3. Open Runs Only', [{                                        
                                         pattern: '[1-3]',
                                         callback: function (response, convo) {
-                                            getRunDetails(Ids[0], parseInt(response.text), function (runDetails) {
-                                                console.log('returned');
+                                            getRunDetails(Ids[0].value, parseInt(response.text),bot,message,convo, function (runDetails) {
                                                 bot.reply(message, ' The project run details are as follows:-', function () {
                                                 var sum=0;
                                                 var count=0;
@@ -277,15 +380,16 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
                                     }]);
                                 }
                                 else{
-                                    bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project');
-                                };
+                                    bot.reply(message, ':flushed: Looks like the project is not valid. Please try again with correct Project :flushed:');
+                                    convo.stop();    
+                            };
                               });
                             });
                         } catch (err) {
                             console.log(err);
                             bot.reply(message, ':flushed: Oops ! Something went wrong here...Please try again later.');
                         }
-                        convo.next();
+                        convo.stop();
                     }
                 },
                 {
@@ -347,6 +451,57 @@ controller.hears(['where is (.*) hosted','environment for (.*)', '(.*) environme
         }
     });
 });
+//For task searching
+controller.hears(['jira task info from taskid (.*)','jira task status from taskid (.*)','jira task info from task id (.*)','jira task status from task id(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+          bot.startConversation(message, function (err, convo) {
+            getInformationById(message.match[1], convo,message,bot, function (searchResult) {
+            bot.reply(message,'Informations related to '+ message.match[1]+' are as follows',function(){
+              bot.reply(message,'TaskId: '+searchResult.key+"\n"+
+                 'TaskType: '+searchResult.fields.issuetype.name+"\n"+
+                 'ParentId: '+ searchResult.fields.parent.key+"\n"+
+                 'ProjectName: '+searchResult.fields.project.name+"\n"+
+                 'OriginalEstimates: '+searchResult.fields.timetracking.originalEstimate+"\n"+
+                 'RemainingEstimates: '+searchResult.fields.timetracking.remainingEstimate+"\n"+
+                 'Task Name: ' +searchResult.fields.summary+"\n"+
+                 'Creator: '+searchResult.fields.creator.displayName+"\n"+
+                 'Reporter: '+searchResult.fields.reporter.displayName+"\n"+
+                 'Assignee: '+searchResult.fields.assignee.displayName+"\n"+
+                 'Status: '+ searchResult.fields.status.name+"\n")
+            });
+    });
+});
+});
+//For jira Tasks of a user
+controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+            bot.startConversation(message, function (err, convo) {
+            getInformationForUser(message.match[1], convo,message,bot, function (searchResult) {
+            bot.reply(message,'All tasks in currently active sprints assigned to user '+ message.match[1]+' are as follows',function(){
+            var counter=0;
+            for(var index=0;index<searchResult.total;index++)
+            {                                                                                      
+                    bot.reply(message, searchResult.issues[index].key+" : https://jira.monotype.com/browse/"+searchResult.issues[index].key);
+            }
+});
+})
+})
+});
+/*
+//For user comment on jira
+controller.hears(['put a comment on jira task (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+            bot.startConversation(message, function (err, convo) {
+                getInformationById(message.match[1], convo,message,bot, function (searchResult) {
+                convo.ask('Please enter comment you want to put on jira', [{ 
+                    pattern: '*',
+                    callback: function (response, convo) {                            
+                    putCommentOnJira(message.match[1],response.text, convo,message,bot, function (searchResult) {                                                                                     
+                                bot.reply(message, searchResult);
+                }); 
+             }
+         }]
+        );  
+        })
+    });
+});*/
 
 function formatUptime(uptime) {
     var unit = 'second';
