@@ -299,6 +299,55 @@ controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,me
         }
     });
 });
+
+
+controller.hears(['where is (.*) hosted','environment for (.*)', '(.*) environment'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    bot.startConversation(message, function (err, convo) {
+        if (!err) {                        
+            convo.ask('Do you want to know Environment details for `' + message.match[1] + '`?', [{
+                pattern: 'yes',
+                callback: function (response, convo) {
+                     getMTApplicationInfo(message.match[1],function (apps) {
+                        if (apps[0] != null) {
+                            bot.reply(message, 'Here you go! :-', function () {
+                                for (index = 0, len = apps.length; index < len; ++index) {
+                                    bot.reply(message, apps[index]);
+                                }
+                            });
+                        }
+                        else {                                                      
+                            getAllMTApplications(function(applications)
+                            {
+                               bot.reply(message, ':white_frowning_face: I\'m sorry I don\'t have any such Application in my dossier! :white_frowning_face: \nPlease try again from the list of Applications supported - ', function () {
+                                    for (index = 0, len = applications.length; index < len; ++index) {
+                                        bot.reply(message, applications[index]);
+                                    }
+                                }); 
+                            });
+                            convo.repeat();
+                        }
+                    });
+                    convo.stop();
+                }
+            },
+            {
+                pattern: 'no',
+                callback: function (response, convo) {
+                    bot.reply(message, 'Nevermind. Hope you have a great day!');
+                    convo.stop();
+                }
+            },
+            {
+                default: true,
+                callback: function (response, convo) {                    
+                    convo.next();
+                }
+            }
+            ]);                
+        }
+    });
+});
+
 function formatUptime(uptime) {
     var unit = 'second';
     if (uptime > 60) {

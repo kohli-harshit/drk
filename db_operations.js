@@ -6,11 +6,11 @@ const moment = require('moment')
 var Q=require('q')
 
 const url = 'mongodb://noi-qa-jenkins:27017/drk-db';
-const collection_name='vm-loggedin-details';
 const mongoClient = mongodb.MongoClient
 const currentTime = new Date()
 const currentHost=os.hostname()
 const operation = retry.operation()
+
 function getMachineStatus(document)
 {
                  if(document)
@@ -46,7 +46,7 @@ getFreeMachine= function(callback)
                 //If there is an error in retry operation
                 if (operation.retry(err)) return
                 //otherwise do following
-                const vmDetailsCollection = db.collection(collection_name);
+                const vmDetailsCollection = db.collection('vm-loggedin-details');
                  var cursorTomachineHostDocument = vmDetailsCollection.find({'status':'logout'});
                  cursorTomachineHostDocument.each(function(err,item)
                  { 
@@ -81,7 +81,7 @@ getMachineInfo = function (machineName,callback)
                 //If there is an error in retry operation
                 if (operation.retry(err)) return
                 //otherwise do following
-                const vmDetailsCollection = db.collection(collection_name)
+                const vmDetailsCollection = db.collection('vm-loggedin-details')
                 var machineHostDocument = vmDetailsCollection.findOne({'hostName':machineName}).then(function(doc) {
                         var machineStatus_Promise=Q.denodeify(getMachineStatus);
                         var promiseGetMachineStatus=getMachineStatus(doc);
@@ -95,9 +95,55 @@ getMachineInfo = function (machineName,callback)
                    });
 
                 })
-            })
-        
+            })  
     })
 }
 
+getMTApplicationInfo = function (appName,callback)
+{   
+    var applications=new Array();
 
+    mongoClient.connect(url, (err, db) => {                
+        const environments = db.collection('environments');
+        var matchingApps = environments.find({'Application':{ $regex: new RegExp("^" + appName.toLowerCase(), "i") }});
+        matchingApps.each(function(err,item){ 
+            if(item !=null)
+            { 
+                //console.log('Matching Application - ' + item.Application);
+                applications.push(item.Application + "\'s " + item.Environment + " Environment is hosted on Web Server(s) - " + item.WebServer + ", DB Server(s) - " + item.DBServer + " and the endpoint is " + item.Endpoint);
+            }
+            else
+            {
+                //console.log('Reaching at end...... closing connection');
+                db.close();
+                callback(applications);  
+            }
+        });
+    })         
+}
+
+getAllMTApplications = function (callback)
+{   
+    var applications=new Array();
+
+    mongoClient.connect(url, (err, db) => {                
+        const environments = db.collection('environments');
+        var matchingApps = environments.find();
+        matchingApps.each(function(err,item){ 
+            if(item !=null)
+            { 
+                //console.log('Matching Application - ' + item.Application);
+                if(applications.lastIndexOf(item.Application)==-1)
+                {
+                    applications.push(item.Application);
+                }
+            }
+            else
+            {
+                //console.log('Reaching at end...... closing connection');
+                db.close();
+                callback(applications);  
+            }
+        });
+    })         
+}
