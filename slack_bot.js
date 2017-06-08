@@ -504,6 +504,9 @@ controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_men
 })
 });
 
+controller.hears(['feedback','suggestion'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    bot.reply(message, "For any feedback/suggestions please contact mailto:harshit.kohli@monotype.com");
+});
 
 controller.hears(['(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     getGiphy("dontKnow",function(link)

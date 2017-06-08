@@ -105,7 +105,7 @@ getMTApplicationInfo = function (appName,callback)
 
     mongoClient.connect(url, (err, db) => {                
         const environments = db.collection('environments');
-        var matchingApps = environments.find({'Application':{ $regex: new RegExp("^" + appName.toLowerCase(), "i") }});
+        var matchingApps = environments.find({'Application':{ $regex: new RegExp(".*" + appName.toLowerCase() + ".*", "i") }});
         matchingApps.each(function(err,item){ 
             if(item !=null)
             { 
