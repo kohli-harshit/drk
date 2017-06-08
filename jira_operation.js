@@ -2,6 +2,19 @@ var Client = require('node-rest-client').Client;
 var async = require('async');
 var Q=require('q');
 var baseUrl="https://jira.monotype.com/rest/api/2/";
+const os = require('os')
+const retry = require('retry')
+const mongodb = require('mongodb')
+const username = require('username')
+const moment = require('moment')
+var Q=require('q')
+
+const url = 'mongodb://noi-qa-jenkins:27017/drk-db';
+const userCollection='users';
+const mongoClient = mongodb.MongoClient
+const currentTime = new Date()
+const currentHost=os.hostname()
+const operation = retry.operation()
 getUrl=function(id)
 {
    var jira_url=baseUrl + "issue/" + id; 
@@ -101,9 +114,8 @@ result.then
    client.post(result, argsForPost, function(searchResult, response)
        {        
                 console.log(response.statusCode);
-                console.log(searchResult);
                 if(response.statusCode=='200')
-                  {
+                  {     
                         callback(searchResult);         
                   }  
                   else
@@ -118,4 +130,64 @@ result.then
 console.log('error is' +err);
   }
  }
+}
+
+searchUserName=function(userInfo,callback)
+{
+  var status="False";
+  const operation = retry.operation()
+        operation.attempt(function (currentAttempt) {
+            mongoClient.connect(url, (err, db) => {
+                //If there is an error in retry operation
+                if (operation.retry(err)) return
+                //otherwise do following
+                const usersCollection = db.collection(userCollection);
+                var currentHostDocument = usersCollection.findOne({'id':userInfo}).then(function(doc) {
+                  console.log('Found the username and it is '+doc.userName);
+                  if(doc)
+                    {
+                      if(doc.userName!=undefined)
+                         {
+                           callback(doc.userName,doc.name,"Found");
+                         }
+                         else
+                          {
+                          console.log('Not found user name');
+                          callback(null,doc.name,"Not Found");
+                          }
+                        }
+                  
+                    db.close();
+                });
+             });
+           });
+}
+updateUserName=function(userInfo,name,userName,callback)
+{
+const operation = retry.operation()
+        operation.attempt(function (currentAttempt) {
+            mongoClient.connect(url, (err, db) => {
+                //If there is an error in retry operation
+                if (operation.retry(err)) return
+                //otherwise do following
+                const usersCollection = db.collection(userCollection);
+                var currentHostDocument = usersCollection.findOne({'id':userInfo}).then(function(doc) {
+                  if(doc)
+                    {
+                        usersCollection.update(
+                            {_id:doc._id},
+                            {$set:{
+                                id: userInfo,
+                                userName:userName,
+                                name:name,
+                            }},dbOperationFinished,callback(userName));                        
+                    }
+                });
+
+                var dbOperationFinished = function(){
+  
+                    db.close();    
+                }
+             });
+        });
 }

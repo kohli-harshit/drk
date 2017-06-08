@@ -10,6 +10,8 @@ var Botkit = require('./lib/Botkit.js'),
     controller = Botkit.slackbot({
         storage: mongoStorage
     });
+
+var team=["api"];    
 var db = require('./db_operations.js');
 var testrail = require('./testrail_operations.js');
 var jira = require('./jira_operation.js');
@@ -186,27 +188,37 @@ controller.hears(['who is using (.*)', 'what is the status of (.*)', 'i want to 
 
 //When user want a Free Virtual Machine.
 controller.hears(['want a free virtual machine', 'assign a machine', 'assign a virtual machine', 'want a free machine', 'need a free machine', 'want a VM', 'need a VM', 'want a free VM', 'need a free VM'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-    bot.reply(message, 'Looking for machines....', function (err, message) {
-        try {
-            getFreeMachine(function (searchFreeMachine) {
+bot.startConversation(message, function (err, convo) {
+                if (!err) {
+                    bot.reply(message,'List of available Teams which are available in my dossier:-',function(err,sent){
+                        bot.reply(message,team.toString().replace(/,/g,"\n"),function(err,sent){
+                         convo.ask(':point_up: Please enter a Team name from the list above', function (response, convo) {
+                          bot.reply(message, 'Looking for machines....', function (err, message) {
+                            try {
+                                getFreeMachine(response.text,function (searchFreeMachine) {
 
-                if (searchFreeMachine[0] != null) {
-                    bot.reply(message, 'Following machines are not logged in by any user right now:-', function () {
-                        for (index = 0, len = searchFreeMachine.length; index < len; ++index) {
-                            bot.reply(message, searchFreeMachine[index]);
-                        }
+                                if (searchFreeMachine[0] != null) {
+                                        bot.reply(message, 'Following machines are not logged in by any user right now:-', function () {
+                                            for (index = 0, len = searchFreeMachine.length; index < len; ++index) {
+                                                bot.reply(message, searchFreeMachine[index]);
+                                            }
+                                        });                                        
+                                    }
+                                    else {
+                                        bot.reply(message, ':white_frowning_face: Hard Luck ! We don\'t have any free machines right now.');                                        
+                                    }
+                                });                                
+                            } catch (err) {
+                                console.log(err);
+                                bot.reply(message, ':flushed: Oops ! Failed to get free machines list...Please try again later.');                                
+                            }
+                            convo.stop();
+                        });
                     });
-                }
-                else {
-                    bot.reply(message, ':white_frowning_face: Hard Luck ! We don\'t have any free machines right now.');
-                }
+                });
             });
-        } catch (err) {
-            console.log(err);
-            bot.reply(message, ':flushed: Oops ! Failed to get free machines list...Please try again later.');
         }
     });
-
 });
 
 controller.hears(['phone number for (.*)','need to call (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
@@ -467,40 +479,185 @@ controller.hears(['where is (.*) hosted','environment for (.*)', '(.*) environme
         }
     });
 });
+
+
 //For task searching
-controller.hears(['jira task info from taskid (.*)','jira task status from taskid (.*)','jira task info from task id (.*)','jira task status from task id(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-          bot.startConversation(message, function (err, convo) {
-            getInformationById(message.match[1], convo,message,bot, function (searchResult) {
-            bot.reply(message,'Informations related to '+ message.match[1]+' are as follows',function(){
-              bot.reply(message,'TaskId: '+searchResult.key+"\n"+
-                 'TaskType: '+searchResult.fields.issuetype.name+"\n"+
-                 'ParentId: '+ searchResult.fields.parent.key+"\n"+
-                 'ProjectName: '+searchResult.fields.project.name+"\n"+
-                 'OriginalEstimates: '+searchResult.fields.timetracking.originalEstimate+"\n"+
-                 'RemainingEstimates: '+searchResult.fields.timetracking.remainingEstimate+"\n"+
-                 'Task Name: ' +searchResult.fields.summary+"\n"+
-                 'Creator: '+searchResult.fields.creator.displayName+"\n"+
-                 'Reporter: '+searchResult.fields.reporter.displayName+"\n"+
-                 'Assignee: '+searchResult.fields.assignee.displayName+"\n"+
-                 'Status: '+ searchResult.fields.status.name+"\n")
+controller.hears(['jira task (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+             bot.startConversation(message, function (err, convo) {
+                getInformationById(message.match[1], convo,message,bot, function (searchResult) {
+                     bot.reply(message,'Informations related to '+ message.match[1]+' are as follows',function(){
+                         bot.reply(message,'TaskId: '+searchResult.key+"\n"+
+                        'TaskType: '+searchResult.fields.issuetype.name+"\n"+
+                        'ParentId: '+ searchResult.fields.parent.key+"\n"+
+                        'ProjectName: '+searchResult.fields.project.name+"\n"+
+                        'OriginalEstimates: '+searchResult.fields.timetracking.originalEstimate+"\n"+
+                        'RemainingEstimates: '+searchResult.fields.timetracking.remainingEstimate+"\n"+
+                        'Task Name: ' +searchResult.fields.summary+"\n"+
+                        'Creator: '+searchResult.fields.creator.displayName+"\n"+
+                        'Reporter: '+searchResult.fields.reporter.displayName+"\n"+
+                        'Assignee: '+searchResult.fields.assignee.displayName+"\n"+
+                        'Status: '+ searchResult.fields.status.name+"\n")
+                        });
+                    });
+                });
             });
-    });
-});
-});
 //For jira Tasks of a user
-controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+controller.hears(['(.*) jira list'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
             bot.startConversation(message, function (err, convo) {
-            getInformationForUser(message.match[1], convo,message,bot, function (searchResult) {
-            bot.reply(message,'All tasks in currently active sprints assigned to user '+ message.match[1]+' are as follows',function(){
-            var counter=0;
-            for(var index=0;index<searchResult.total;index++)
-            {                                                                                      
-                    bot.reply(message, searchResult.issues[index].key+" : https://jira.monotype.com/browse/"+searchResult.issues[index].key);
-            }
-});
-})
-})
-});
+               getInformationForUser(message.match[1], convo,message,bot, function (searchResults) {
+                   async.eachSeries(searchResults.issues, function (searchResult, callback) {
+                        getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
+                            if(searchRes.fields.timetracking.remainingEstimate===undefined)       
+                            {                
+                                if(searchRes.fields.status.name=="Done") 
+                                {
+                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback();
+                                   });
+                                });
+                               }
+                               else if(searchRes.fields.status.name=="To Do")
+                                {
+                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"\n",function(err,sent) {
+                                   callback(); 
+                                   });
+                                 });
+                                }
+                                else
+                                    {  
+                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"\n",function(err,sent) {
+                                        callback();
+                                        });
+                                    });
+                                    }
+                            }
+                            else
+                            {
+                            if(searchRes.fields.status.name=="Done") 
+                                {
+                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback();
+                                    });
+                                });
+                               }
+                               else if(searchRes.fields.status.name=="To Do")
+                                {
+                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"\n",function(err,sent) {
+                                   callback(); 
+                                         });
+                                    });
+                                }
+                                else
+                                    {  
+                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"\n",function(err,sent) {
+                                        callback();
+                                        });
+                                    });
+                                 }
+                             }
+                             });
+ 
+                          });
+                     }); 
+             });
+    });
+//For my own jira tasks
+controller.hears(['my jira'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+  controller.storage.users.get(message.user, function (err, user)
+   {
+    if (user) {
+           bot.startConversation(message, function (err, convo) {
+           searchUserName(message.user,function(userName,name,status){
+               if(status=="Not Found")
+               {
+                     convo.ask('I dont have your jira username, Please provide that for jira tasks searching.....', function (response, convo) {
+                     updateUserName(message.user,name,response.text,function(userName)
+                        {
+                        callAndPrintOutut(userName,convo,message,bot);
+                    });
+                    convo.stop();
+              });
+              }
+              else if(status=="Found")
+                {
+                callAndPrintOutut(userName,convo,message,bot);
+                }
+           });
+         });
+    }
+    else{
+           bot.startConversation(message, function (err, convo) {
+                if (!err) {
+                    convo.say('I do not know your name yet!');
+                    convo.ask('What should I call you?', function (response, convo) {
+                        convo.ask('You want me to call you `' + response.text + '`?', [{
+                            pattern: 'yes',
+                            callback: function (response, convo) {
+                                // since no further messages are queued after this,
+                                // the conversation will end naturally with status == 'completed'
+                                convo.next();
+                            }
+                        },
+                        {
+                            pattern: 'no',
+                            callback: function (response, convo) {
+                                // stop the conversation. this will cause it to end with status == 'stopped'
+                                convo.stop();
+                            }
+                        },
+                        {
+                            default: true,
+                            callback: function (response, convo) {
+                                convo.repeat();
+                                convo.next();
+                            }
+                        }
+                        ]);
+
+                        convo.next();
+
+                    }, {
+                            'key': 'nickname'
+                        }); // store the results in a field called nickname
+
+                    convo.on('end', function (convo) {
+                        if (convo.status == 'completed') {
+                            bot.reply(message, 'OK! I will update my dossier...');
+
+                            controller.storage.users.get(message.user, function (err, user) {
+                                if (!user) {
+                                    user = {
+                                        id: message.user,
+                                    };
+                                }
+                                user.name = convo.extractResponse('nickname');
+                                controller.storage.users.save(user, function (err, id) {
+                                    bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.',function()
+                                                                    {
+                                                                        bot.reply(message," Got your name! Please retry with my jira to search jira assigned to you")
+                                                                    });
+
+
+                                });
+                            });
+                        } else {
+                            // this happens if the conversation ended prematurely for some reason
+                            bot.reply(message, 'OK, nevermind!');
+                        }
+                    });
+                }
+            });
+        }
+   }
+  )
+}); 
+
 
 controller.hears(['feedback','suggestion'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.reply(message, "For any feedback/suggestions please drop a mailto:harshit.kohli@monotype.com");
@@ -579,4 +736,69 @@ function formatUptime(uptime) {
 
 function reverse(s) {
     return s.split("").reverse().join("");
+}
+
+callAndPrintOutut=function(userName,convo,message,bot)
+{
+   getInformationForUser(userName, convo,message,bot, function (searchResults) {
+                   async.eachSeries(searchResults.issues, function (searchResult, callback) {
+                        getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
+                            if(searchRes.fields.timetracking.remainingEstimate===undefined)       
+                            {                
+                                if(searchRes.fields.status.name=="Done") 
+                                {
+                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback();
+                                   });
+                                });
+                               }
+                               else if(searchRes.fields.status.name=="To Do")
+                                {
+                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"\n",function(err,sent) {
+                                   callback(); 
+                                   });
+                                 });
+                                }
+                                else
+                                    {  
+                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"\n",function(err,sent) {
+                                        callback();
+                                        });
+                                    });
+                                    }
+                            }
+                            else
+                            {
+                            if(searchRes.fields.status.name=="Done") 
+                                {
+                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback();
+                                    });
+                                });
+                               }
+                               else if(searchRes.fields.status.name=="To Do")
+                                {
+                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"\n",function(err,sent) {
+                                   callback(); 
+                                         });
+                                    });
+                                }
+                                else
+                                    {  
+                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"\n",function(err,sent) {
+                                        callback();
+                                        });
+                                    });
+                                 }
+                             }
+                             });
+ 
+                          });
+                       });
 }

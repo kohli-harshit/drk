@@ -35,7 +35,7 @@ function getMachineStatus(document)
 return result;
 }
 
-getFreeMachine= function(callback)
+getFreeMachine= function(teamName,callback)
 {
     var freeMachine=new Array();
      //Remove all spaces from Machine Name
@@ -51,7 +51,11 @@ getFreeMachine= function(callback)
                  cursorTomachineHostDocument.each(function(err,item)
                  { 
                      if(item !=null)
-                     { freeMachine.push(item.hostName);
+                     { 
+                         if(item.team==teamName)
+                         {
+                         freeMachine.push(item.hostName);
+                         }
                      }
                      else
                      {
