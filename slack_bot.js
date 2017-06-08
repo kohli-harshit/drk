@@ -230,7 +230,7 @@ controller.hears(['phone number for (.*)','need to call (.*)'], 'direct_message,
 });
 
 //When user want a project run status
-controller.hears(['testrail status for (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.startConversation(message, function (err, convo) {
         if (!err) {
             convo.ask('Do you want to see TestRail run information about project(s) having name \"' + message.match[1] + '\" ?', [
@@ -507,6 +507,25 @@ controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_men
 controller.hears(['feedback','suggestion'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.reply(message, "For any feedback/suggestions please contact mailto:harshit.kohli@monotype.com");
 });
+
+controller.hears(['help'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    var helpString = "Usage Guide :-" +
+    "\n\n*Virtual Machine Management* :-\n" +
+    "To know who is logged into a virtual machine, type - `who is using machinename` (or something similar)\n" +
+    "To get a free machine, type - `i need a VM` (or something similar)\n" +
+    "\n\n*TestRail Result Information* :-\n" +
+    "To know the status of latest executions of a TestRail project, type - `testrail for projectname` (or something similar)\n" +
+    "\n\n*JIRA Task Information* :-\n" +
+    "To know the status of your JIRA tasks for the current sprint, type - `my jira` (or something similar)\n" +
+    "To know the status of someone else's JIRA tasks for the current sprint, type - `jirausername jira task` (or something similar)\n" +
+    "\n\n*Monotype Application Environment Information* :-\n" +
+    "To know where an application is hosted, type - `environment for applicationname` (or something similar)\n" +
+    "\n\n* NOI-QA-JENKINS Integration* :-\n" +
+    "blah blah blah"+
+    "\n\nTo provide any feedback or suggestions, type `feedback`";
+    bot.reply(message, helpString);
+});
+
 
 controller.hears(['(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     getGiphy("dontKnow",function(link)
