@@ -13,6 +13,7 @@ var Botkit = require('./lib/Botkit.js'),
 var db = require('./db_operations.js');
 var testrail = require('./testrail_operations.js');
 var jira = require('./jira_operation.js');
+var giphy = require('./giphyOperation.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
@@ -53,10 +54,16 @@ controller.hears(['hello', 'hey', '\\bhi\\b'], 'direct_message,direct_mention,me
     });
 
     controller.storage.users.get(message.user, function (err, user) {
-        if (user && user.name) {
-            bot.reply(message, 'Hello ' + user.name + '!!');
+        if (user && user.name) {            
+            getGiphy("welcome",function(link)
+            {
+                bot.reply(message, 'Hello ' + user.name + '!! ' + link);
+            });
         } else {
-            bot.reply(message, 'Hello.');
+            getGiphy("welcome",function(link)
+            {
+                bot.reply(message, 'Hello. ' + link);
+            });
         }
     });
 });
@@ -497,6 +504,13 @@ controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_men
 })
 });
 
+
+controller.hears(['(.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    getGiphy("dontKnow",function(link)
+    {
+        bot.reply(message, "I'm sorry I don't understand that..." + link);
+    });
+});
 
 function getUserPhone(username,callback) {
     bot.api.users.list({},function (err,list) {        
