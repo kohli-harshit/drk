@@ -34,7 +34,8 @@
     "username": "^2.3.0",
     "async":"^2.4.0",
     "node-rest-client": "3.1.0",
-    "random-js":"1.0.8" },
+    "random-js":"1.0.8",
+    "jenkins" : "0.20.0" },
   "devDependencies": {
     "jscs": "^2.7.0",
     "mocha": "^2.4.5",

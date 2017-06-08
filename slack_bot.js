@@ -186,8 +186,6 @@ controller.hears(['who is using (.*)', 'what is the status of (.*)', 'i want to 
 
 //When user want a Free Virtual Machine.
 controller.hears(['want a free virtual machine', 'assign a machine', 'assign a virtual machine', 'want a free machine', 'need a free machine', 'want a VM', 'need a VM', 'want a free VM', 'need a free VM'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-
-
     bot.reply(message, 'Looking for machines....', function (err, message) {
         try {
             getFreeMachine(function (searchFreeMachine) {
@@ -505,11 +503,12 @@ controller.hears(['jira task assigned to user (.*)'], 'direct_message,direct_men
 });
 
 controller.hears(['feedback','suggestion'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-    bot.reply(message, "For any feedback/suggestions please contact mailto:harshit.kohli@monotype.com");
+    bot.reply(message, "For any feedback/suggestions please drop a mailto:harshit.kohli@monotype.com");
 });
 
 controller.hears(['help'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     var helpString = "Usage Guide :-" +
+    "\n\nFor a better experience, first time users should start the chat with `hi` or `hey` or `hello`" +
     "\n\n*Virtual Machine Management* :-\n" +
     "To know who is logged into a virtual machine, type - `who is using machinename` (or something similar)\n" +
     "To get a free machine, type - `i need a VM` (or something similar)\n" +
@@ -520,8 +519,13 @@ controller.hears(['help'], 'direct_message,direct_mention,message_received,menti
     "To know the status of someone else's JIRA tasks for the current sprint, type - `jirausername jira task` (or something similar)\n" +
     "\n\n*Monotype Application Environment Information* :-\n" +
     "To know where an application is hosted, type - `environment for applicationname` (or something similar)\n" +
-    "\n\n* NOI-QA-JENKINS Integration* :-\n" +
-    "blah blah blah"+
+    "\n\n* Jenkins Integration* :-\n" +
+    "Supported Jenkins Instance -  http://noi-qa-jenkins:8080\n" +
+    "For Starting a job, type - `start jobname`\n" +
+    "For Stopping a job, type - `stop jobname`\n" +
+    "For Checking a job status, type - `job info jobname`\n" +
+    "\n\n* Slack User Phone Number Integration* :-\n" +
+    "To know the phone number for a Slack User, type - `need to call personname` (or something similar)\n" +
     "\n\nTo provide any feedback or suggestions, type `feedback`";
     bot.reply(message, helpString);
 });
