@@ -112,14 +112,15 @@ controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your na
 controller.hears(['who is using (.*)', 'what is the status of (.*)', 'i want to use (.*)'], 'direct_message,direct_mention,mention', function (bot, message) {
     try {
         var inputString = message.match[1];
+        var finalInputString;
         if (inputString.indexOf("?") != -1) {
-            var finalInputString = inputString.substring(0, inputString.indexOf("?"));
+            finalInputString = inputString.substring(0, inputString.indexOf("?"));
         }
         else if (inputString.indexOf(".") != -1) {
-            var finalInputString = inputString.substring(0, inputString.indexOf("."));
+            finalInputString = inputString.substring(0, inputString.indexOf("."));
         }
         else {
-            var finalInputString = inputString;
+            finalInputString = inputString;
         }
 
         getMachineInfo(finalInputString, function (machineAssignee) {
@@ -127,7 +128,7 @@ controller.hears(['who is using (.*)', 'what is the status of (.*)', 'i want to 
         });
     } catch (err) {
         console.log(err);
-        bot.reply(message, ':flushed: Oops ! Failed to get machine status...Please try again later.');
+        bot.reply(message, ':flushed: Oops ! Failed to get machine status...Please try again later :flushed:');
     }
 });
 
@@ -453,11 +454,11 @@ controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_men
                getInformationForUser(message.match[1], convo,message,bot, function (searchResults) {
                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
                         getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
-                            if(searchRes.fields.timetracking.remainingEstimate===undefined)       
+                            if(searchRes.fields.timetracking.remainingEstimate)
                             {                
                                 if(searchRes.fields.status.name=="Done") 
                                 {
-                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
                                     bot.reply(message,"\n",function(err,sent) {
                                     callback();
                                    });
@@ -465,7 +466,7 @@ controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_men
                                }
                                else if(searchRes.fields.status.name=="To Do")
                                 {
-                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
                                    bot.reply(message,"\n",function(err,sent) {
                                    callback(); 
                                    });
@@ -473,7 +474,7 @@ controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_men
                                 }
                                 else
                                     {  
-                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+ searchRes.key + "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate + "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
                                         bot.reply(message,"\n",function(err,sent) {
                                         callback();
                                         });
@@ -484,7 +485,7 @@ controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_men
                             {
                             if(searchRes.fields.status.name=="Done") 
                                 {
-                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
                                     bot.reply(message,"\n",function(err,sent) {
                                     callback();
                                     });
@@ -492,7 +493,7 @@ controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_men
                                }
                                else if(searchRes.fields.status.name=="To Do")
                                 {
-                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
                                    bot.reply(message,"\n",function(err,sent) {
                                    callback(); 
                                          });
@@ -500,7 +501,7 @@ controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_men
                                 }
                                 else
                                     {  
-                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
                                         bot.reply(message,"\n",function(err,sent) {
                                         callback();
                                         });
@@ -509,8 +510,9 @@ controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_men
                              }
                              });
  
-                          });
+                          });                          
                      }); 
+                     convo.stop();
              });
     });
 //For my own jira tasks
@@ -526,8 +528,7 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
                     updateUserName(message.user,name,response.text,function(userName)
                     {
                         callAndPrintOutut(userName,convo,message,bot);
-                    });
-                    convo.stop();
+                    });                    
               });
               }
               else if(status=="Found")
@@ -535,6 +536,7 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
                 callAndPrintOutut(userName,convo,message,bot);
                 }
            });
+           convo.stop();
          });
     }
     else{
