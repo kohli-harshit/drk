@@ -15,6 +15,7 @@ var db = require('./db_operations.js');
 var testrail = require('./testrail_operations.js');
 var jira = require('./jira_operation.js');
 var giphy = require('./giphyOperation.js');
+var jenkins = require('./jenkinsOperation.js');
 var os = require('os');
 var fs = require('fs');
 var ping = require('ping');
@@ -609,6 +610,220 @@ controller.hears(['feedback','suggestion'], 'direct_message,direct_mention,messa
     bot.reply(message, "For any feedback/suggestions please drop a mailto:harshit.kohli@monotype.com");
 });
 
+controller.hears(['start job (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    bot.startConversation(message, function (err, convo) {
+        if (!err) {
+            convo.ask('Do you want to search http://noi-qa-jenkins:8080 for job(s) having name `' + message.match[1] + '` ?', [
+            {
+                pattern: 'yes',
+                callback: function (response, convo) {                    
+                    getJenkinsProject(message.match[1],function (jobs) {
+                        if(jobs.length==0)
+                        {
+                            bot.reply(message,":disappointed: No Job found with name - " + message.match[1] + " :disappointed:" );                                
+                        }
+                        else if(jobs.length==1)
+                        {
+                            startBuild(jobs[0].key,function(buildURL)
+                            {
+                                if(buildURL)
+                                {
+                                    if(buildURL=="Job Already Running")
+                                    {
+                                        bot.reply(message,":sunglasses: Job `" + jobs[0].key + "`. Is already running :sunglasses: \n ");
+                                    }
+                                    else if(buildURL!="Error")
+                                    {
+                                        bot.reply(message,":muscle: Job `" + jobs[0].key + "`. Successfully inititiated ! :muscle: \n " + buildURL );
+                                    }
+                                }
+                                else
+                                {
+                                    bot.reply(message,":zipper_mouth_face: Not able to Start the job - `" + jobs[0].key + "` :zipper_mouth_face:" );
+                                }
+                            });
+                            convo.stop();
+                        }
+                        else
+                        {
+                            bot.reply(message, 'There are multiple Jobs having the keyword `'+message.match[1]+'`:-',function(callback)
+                            {          
+                                var count=0;
+                                async.eachSeries(jobs,function (job,callback) {
+                                    bot.reply(message, ++count + '. ' + job.key, function (err, sent) {
+                                        callback();
+                                    }); 
+                                },function(callback)
+                                {
+                                    convo.stop();
+                                    bot.startConversation(message, function (err, convo) {
+                                        if(err)
+                                        {
+                                            console.log(err);
+                                        }
+                                        convo.ask(':point_up_2: Please enter the Job number which you want to run', [{
+                                            pattern: '[1-9][0-9]{0,2}',
+                                            callback: function (response, convo) {            
+                                                if(parseInt(response.text)<=jobs.length)
+                                                {
+                                                    startBuild(jobs[parseInt(response.text)-1].key,function(buildURL)
+                                                    {
+                                                        if(buildURL)
+                                                        {
+                                                            if(buildURL!="Error")
+                                                            {
+                                                                bot.reply(message,":muscle: Job - " + jobs[parseInt(response.text)-1].key + " successfully inititiated :muscle: \n" + buildURL );
+                                                            }
+                                                        }                                                        
+                                                        else
+                                                        {
+                                                            bot.reply(message,":zipper_mouth_face: Not able to Start the job - " + jobs[parseInt(response.text)-1].key + "(Only Non Parameterized Jobs supported) :zipper_mouth_face:" );
+                                                        }
+                                                    });
+                                                    convo.stop();
+                                                }
+                                                else
+                                                {
+                                                    bot.reply(message,"Please enter a valid number");
+                                                    convo.repeat();
+                                                }
+                                            }
+                                        },                                              
+                                        {
+                                            pattern: '*',
+                                            callback: function (response, convo) {
+                                                bot.reply(message, 'Input not supported');
+                                                convo.repeat();
+                                            }
+                                        }]);                                    
+                                    });
+                                });
+                            });                       
+                        };
+                    });
+                }
+            },
+            {
+                pattern: 'no',
+                callback: function (response, convo) {
+                    bot.reply(message, 'Nevermind. Hope you have a great day !');
+                    convo.stop();
+                }
+            }]);
+        }
+    });    
+});
+
+controller.hears(['stop job (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    bot.startConversation(message, function (err, convo) {
+        if (!err) {
+            convo.ask('Do you want to search http://noi-qa-jenkins:8080 for job(s) having name `' + message.match[1] + '` ?', [
+            {
+                pattern: 'yes',
+                callback: function (response, convo) {                    
+                    getJenkinsProject(message.match[1],function (jobs) {
+                        if(jobs.length==0)
+                        {
+                            bot.reply(message,":disappointed: No Job found with name - " + message.match[1] + " :disappointed:" );                                
+                        }
+                        else if(jobs.length==1)
+                        {
+                            stopBuild(jobs[0].key,function(jobresult)
+                            {
+                                if(jobresult)
+                                {
+                                    if(jobresult=="Job not running")
+                                    {
+                                        bot.reply(message,":sunglasses: Job `" + jobs[0].key + "`. Is not in running state :sunglasses: \n ");
+                                    }
+                                    else if(jobresult!="Error")
+                                    {
+                                        bot.reply(message,":muscle: Job - " + jobs[0].key + " successfully stopped :muscle:" );
+                                    }
+                                }                                
+                                else
+                                {
+                                    bot.reply(message,":zipper_mouth_face: Not able to Stop the job - " + jobs[0].key + " :zipper_mouth_face:" );
+                                }
+                            });
+                            convo.stop();
+                        }
+                        else
+                        {
+                            bot.reply(message, 'There are multiple Jobs having the keyword `'+message.match[1]+'`:-',function(callback)
+                            {          
+                                var count=0;
+                                async.eachSeries(jobs,function (job,callback) {
+                                    bot.reply(message, ++count + '. ' + job.key, function (err, sent) {
+                                        callback();
+                                    }); 
+                                },function(callback)
+                                {
+                                    convo.stop();
+                                    bot.startConversation(message, function (err, convo) {
+                                        if(err)
+                                        {
+                                            console.log(err);
+                                        }
+                                        convo.ask(':point_up_2: Please enter the Job number which you want to stop', [{
+                                            pattern: '[1-9][0-9]{0,2}',
+                                            callback: function (response, convo) {            
+                                                if(parseInt(response.text)<=jobs.length)
+                                                {                                                    
+                                                    stopBuild(jobs[parseInt(response.text)-1].key,function(jobresult)
+                                                    {   
+                                                        if(jobresult)                                                     
+                                                        {
+                                                            if(jobresult=="Job not running")
+                                                            {
+                                                                bot.reply(message,":sunglasses: Job `" + jobs[parseInt(response.text)-1].key + "`. Is not in running state :sunglasses: \n ");
+                                                            }
+                                                            else if(jobresult!="Error")
+                                                            {
+                                                                bot.reply(message,":muscle: Job - " + jobs[parseInt(response.text)-1].key + " successfully stopped :muscle:" );
+                                                            }
+                                                        }                                                        
+                                                        else
+                                                        {
+                                                            bot.reply(message,":zipper_mouth_face: Not able to Stop the job - " + jobs[parseInt(response.text)-1].key + " :zipper_mouth_face:" );
+                                                        }
+                                                    });
+                                                    convo.stop();
+                                                }
+                                                else
+                                                {
+                                                    bot.reply(message,"Please enter a valid number");
+                                                    convo.repeat();
+                                                }
+                                            }
+                                        },                                              
+                                        {
+                                            pattern: '*',
+                                            callback: function (response, convo) {
+                                                bot.reply(message, 'Input not supported');
+                                                convo.repeat();
+                                            }
+                                        }]);                                    
+                                    });
+                                });
+                            });                       
+                        };
+                    });
+                }
+            },
+            {
+                pattern: 'no',
+                callback: function (response, convo) {
+                    bot.reply(message, 'Nevermind. Hope you have a great day !');
+                    convo.stop();
+                }
+            }]);
+        }
+    });    
+});
+
+
+
 controller.hears(['help'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     var helpString = "Usage Guide :-" +
     "\n\nFor a better experience, first time users should start the chat with `hi` or `hey` or `hello`" +
@@ -624,8 +839,8 @@ controller.hears(['help'], 'direct_message,direct_mention,message_received,menti
     "To know where an application is hosted, type - `environment for applicationname` (or something similar)\n" +
     "\n\n* Jenkins Integration* :-\n" +
     "Supported Jenkins Instance -  http://noi-qa-jenkins:8080\n" +
-    "For Starting a job, type - `start jobname`\n" +
-    "For Stopping a job, type - `stop jobname`\n" +
+    "For Starting a job, type - `start job jobname`\n" +
+    "For Stopping a job, type - `stop job jobname`\n" +
     "For Checking a job status, type - `job info jobname`\n" +
     "\n\n* Slack User Phone Number Integration* :-\n" +
     "To know the phone number for a Slack User, type - `need to call personname` (or something similar)\n" +
