@@ -52,9 +52,9 @@ getFreeMachine= function(teamName,callback)
                  { 
                      if(item !=null)
                      { 
-                         if(item.team==teamName)
+                         if(item.team.toLowerCase() == teamName.toLowerCase())
                          {
-                         freeMachine.push(item.hostName);
+                            freeMachine.push(item.hostName);
                          }
                      }
                      else

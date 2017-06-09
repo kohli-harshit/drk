@@ -28,7 +28,7 @@ getProjectIdFromResponse = function(data,name)
         }
         return Id;
 }
-getUrl=function(id)
+getTestRailUrl=function(id)
 {
    var getRuns_url=url + "v2/get_runs/" + id; 
    return getRuns_url;
@@ -64,7 +64,7 @@ getRunDetails = function (id,choice,bot,message,convo,callback)
         var runDetails=[];               
         
         var getUrl_Promise=Q.denodeify(getUrl);
-        var result=getUrl(id);                        
+        var result=getTestRailUrl(id);                        
          result.then
            {      
                 try

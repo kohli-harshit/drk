@@ -92,7 +92,7 @@ result.then
                   }  
                   else
                   {
-                    bot.reply(message,'":flushed:There is currently no task on this users plate! please retry later:flushed:');
+                    bot.reply(message,'":flushed: Looks like there is no task on this users plate! :flushed:');
                     convo.stop();   
                   }    
         });

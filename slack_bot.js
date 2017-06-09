@@ -11,7 +11,6 @@ var Botkit = require('./lib/Botkit.js'),
         storage: mongoStorage
     });
 
-var team=["api"];    
 var db = require('./db_operations.js');
 var testrail = require('./testrail_operations.js');
 var jira = require('./jira_operation.js');
@@ -21,6 +20,7 @@ var fs = require('fs');
 var ping = require('ping');
 var Q = require('q');
 var async = require('async');
+var team=["API"];
 
 //This is for again opening connection if it closes 
 function start_rtm() {
@@ -66,6 +66,7 @@ controller.hears(['hello', 'hey', '\\bhi\\b'], 'direct_message,direct_mention,me
             {
                 bot.reply(message, 'Hello. ' + link);
             });
+            getNameFromUser(bot,message,"For understanding how I work, ping me `help`");
         }
     });
 });
@@ -93,74 +94,18 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
         if (user && user.name) {
             bot.reply(message, 'Your name is ' + user.name);
         } else {
-            bot.startConversation(message, function (err, convo) {
-                if (!err) {
-                    convo.say('I do not know your name yet!');
-                    convo.ask('What should I call you?', function (response, convo) {
-                        convo.ask('You want me to call you `' + response.text + '`?', [{
-                            pattern: 'yes',
-                            callback: function (response, convo) {
-                                // since no further messages are queued after this,
-                                // the conversation will end naturally with status == 'completed'
-                                convo.next();
-                            }
-                        },
-                        {
-                            pattern: 'no',
-                            callback: function (response, convo) {
-                                // stop the conversation. this will cause it to end with status == 'stopped'
-                                convo.stop();
-                            }
-                        },
-                        {
-                            default: true,
-                            callback: function (response, convo) {
-                                convo.repeat();
-                                convo.next();
-                            }
-                        }
-                        ]);
-
-                        convo.next();
-
-                    }, {
-                            'key': 'nickname'
-                        }); // store the results in a field called nickname
-
-                    convo.on('end', function (convo) {
-                        if (convo.status == 'completed') {
-                            bot.reply(message, 'OK! I will update my dossier...');
-
-                            controller.storage.users.get(message.user, function (err, user) {
-                                if (!user) {
-                                    user = {
-                                        id: message.user,
-                                    };
-                                }
-                                user.name = convo.extractResponse('nickname');
-                                controller.storage.users.save(user, function (err, id) {
-                                    bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.');
-
-
-                                });
-                            });
-                        } else {
-                            // this happens if the conversation ended prematurely for some reason
-                            bot.reply(message, 'OK, nevermind!');
-                        }
-                    });
-                }
-            });
+            getNameFromUser(bot,message,"");
         }
     });
 });
+
 
 //User asks Bot Identity
 controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'], 'direct_message,direct_mention,mention', function (bot, message) {
     var hostname = os.hostname();
     var uptime = formatUptime(process.uptime());
 
-    bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '.');
+    bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name + '> and I like to help people with their daily tasks. I have been running for ' + uptime);
 });
 
 //User want to know status of a machine 
@@ -190,11 +135,12 @@ controller.hears(['who is using (.*)', 'what is the status of (.*)', 'i want to 
 controller.hears(['want a free virtual machine', 'assign a machine', 'assign a virtual machine', 'want a free machine', 'need a free machine', 'want a VM', 'need a VM', 'want a free VM', 'need a free VM'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
 bot.startConversation(message, function (err, convo) {
                 if (!err) {
-                    bot.reply(message,'List of available Teams which are available in my dossier:-',function(err,sent){
+                    bot.reply(message,'List of available Teams in my dossier:-',function(err,sent){
                         bot.reply(message,team.toString().replace(/,/g,"\n"),function(err,sent){
                          convo.ask(':point_up: Please enter a Team name from the list above', function (response, convo) {
                           bot.reply(message, 'Looking for machines....', function (err, message) {
                             try {
+
                                 getFreeMachine(response.text,function (searchFreeMachine) {
 
                                 if (searchFreeMachine[0] != null) {
@@ -205,7 +151,7 @@ bot.startConversation(message, function (err, convo) {
                                         });                                        
                                     }
                                     else {
-                                        bot.reply(message, ':white_frowning_face: Hard Luck ! We don\'t have any free machines right now.');                                        
+                                        bot.reply(message, ':white_frowning_face: Hard Luck ! No Machines available for Team - ' + response.text + " :white_frowning_face:");
                                     }
                                 });                                
                             } catch (err) {
@@ -243,7 +189,7 @@ controller.hears(['phone number for (.*)','need to call (.*)'], 'direct_message,
 controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.startConversation(message, function (err, convo) {
         if (!err) {
-            convo.ask('Do you want to see TestRail run information about project(s) having name \"' + message.match[1] + '\" ?', [
+            convo.ask('Do you want to see TestRail run information about project(s) having name `' + message.match[1] + '` ?', [
                 {
                     pattern: 'yes',
                     callback: function (response, convo) {
@@ -253,7 +199,7 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                 getProjectId(message.match[1], function (Ids,callback) {
                                 if(Ids.length>1)
                                  {
-                                   bot.reply(message, 'There are multiple projects with the name '+message.match[1]+'. These are as follows :-',function()
+                                   bot.reply(message, 'There are multiple projects with the name '+message.match[1]+':-',function()
                                    {          
                                           async.eachSeries(Ids, function (Ids, callback) {                                                                                   
                                           bot.reply(message, 'Project Id:= '+Ids.value + '  Project Name:=' + Ids.key, function (err, sent) {                                                    
@@ -262,7 +208,7 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                            },function()
                                            {
                                             var flag=0;
-                                            convo.ask(' Please Enter Project Id corresponding to project listed above', [{ 
+                                            convo.ask(':point_up_2: Please Enter Project Id corresponding to project listed above :point_up_2:', [{ 
                                             pattern: '[1-9][0-9]{0,2}',
                                             callback: function (response, convo) {
                                             var projectId=parseInt(response.text);
@@ -310,15 +256,15 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                                                 avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
                                                                 if(avg>=90)
                                                                 {
-                                                                    bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
+                                                                    bot.reply(message, ":muscle: Looks like `" + message.match[1] + "` is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
                                                                 }
                                                                 else if(avg<90 && avg>=80)
                                                                 {
-                                                                    bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
+                                                                    bot.reply(message, ":fearful: Looks like `" + message.match[1] +  "` needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
                                                                 }
                                                                 else
                                                                 {
-                                                                    bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
+                                                                    bot.reply(message, ":scream: Looks like `" + message.match[1] +  "` is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
                                                                 }                                                
                                                             });
                                                             convo.stop();
@@ -336,8 +282,8 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                             }
                                             else
                                             {
-                                                bot.reply(message,':flushed: Wrong ProjectId! Please Enter only from above mentioned projectIds')
-                                                convo.repeat();
+                                                bot.reply(message,':flushed: Invalid Project ID Received! Please try again with full Project name or Correct ID in case of multiple projects :flushed:')
+                                                convo.stop();
                                             }
                                            });
                                               }
@@ -502,7 +448,7 @@ controller.hears(['jira task (.*)'], 'direct_message,direct_mention,message_rece
                 });
             });
 //For jira Tasks of a user
-controller.hears(['(.*) jira list'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
             bot.startConversation(message, function (err, convo) {
                getInformationForUser(message.match[1], convo,message,bot, function (searchResults) {
                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
@@ -576,9 +522,9 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
            searchUserName(message.user,function(userName,name,status){
                if(status=="Not Found")
                {
-                     convo.ask('I dont have your jira username, Please provide that for jira tasks searching.....', function (response, convo) {
-                     updateUserName(message.user,name,response.text,function(userName)
-                        {
+                    convo.ask('I don\'t have your JIRA username, Please enter your JIRA Username (don\'t worry I won\'t ask for your Password! :sunglasses:) :-', function (response, convo) {
+                    updateUserName(message.user,name,response.text,function(userName)
+                    {
                         callAndPrintOutut(userName,convo,message,bot);
                     });
                     convo.stop();
@@ -639,11 +585,9 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
                                 user.name = convo.extractResponse('nickname');
                                 controller.storage.users.save(user, function (err, id) {
                                     bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.',function()
-                                                                    {
-                                                                        bot.reply(message," Got your name! Please retry with my jira to search jira assigned to you")
-                                                                    });
-
-
+                                    {
+                                        bot.reply(message," Got your name! Please retry with my jira to search jira assigned to you")
+                                    });
                                 });
                             });
                         } else {
@@ -743,11 +687,11 @@ callAndPrintOutut=function(userName,convo,message,bot)
    getInformationForUser(userName, convo,message,bot, function (searchResults) {
                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
                         getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
-                            if(searchRes.fields.timetracking.remainingEstimate===undefined)       
+                            if(searchRes.fields.timetracking.remainingEstimate)       
                             {                
                                 if(searchRes.fields.status.name=="Done") 
                                 {
-                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message,"Task: `" +searchRes.fields.summary+ "`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) {                                     
                                     bot.reply(message,"\n",function(err,sent) {
                                     callback();
                                    });
@@ -755,7 +699,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
                                }
                                else if(searchRes.fields.status.name=="To Do")
                                 {
-                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
                                    bot.reply(message,"\n",function(err,sent) {
                                    callback(); 
                                    });
@@ -763,7 +707,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
                                 }
                                 else
                                     {  
-                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+ " Remaining Time: "+searchRes.fields.timetracking.remainingEstimates+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
                                         bot.reply(message,"\n",function(err,sent) {
                                         callback();
                                         });
@@ -774,7 +718,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
                             {
                             if(searchRes.fields.status.name=="Done") 
                                 {
-                                    bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                    bot.reply(message, "Task: `" + searchRes.fields.summary + "`\nLink: https://jira.monotype.com/browse/" + searchRes.key + "\nCurrent Status: " +searchRes.fields.status.name + " :trophy:", function (err, sent) { 
                                     bot.reply(message,"\n",function(err,sent) {
                                     callback();
                                     });
@@ -782,7 +726,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
                                }
                                else if(searchRes.fields.status.name=="To Do")
                                 {
-                                   bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply("Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
                                    bot.reply(message,"\n",function(err,sent) {
                                    callback(); 
                                          });
@@ -790,7 +734,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
                                 }
                                 else
                                     {  
-                                        bot.reply(message,searchRes.key+" Task Name:" +searchRes.fields.summary+" Link: https://jira.monotype.com/browse/"+searchRes.key+ " Current Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply("Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
                                         bot.reply(message,"\n",function(err,sent) {
                                         callback();
                                         });
@@ -801,4 +745,66 @@ callAndPrintOutut=function(userName,convo,message,bot)
  
                           });
                        });
+}
+
+function getNameFromUser(bot,message,replyMessage)
+{
+    bot.startConversation(message, function (err, convo) {
+        if (!err) {
+            convo.say('I do not know your name yet!');
+            convo.ask('What should I call you?', function (response, convo) {
+                convo.ask('You want me to call you `' + response.text + '`?', [{
+                    pattern: 'yes',
+                    callback: function (response, convo) {
+                        // since no further messages are queued after this,
+                        // the conversation will end naturally with status == 'completed'
+                        convo.next();
+                    }
+                },
+                {
+                    pattern: 'no',
+                    callback: function (response, convo) {
+                        // stop the conversation. this will cause it to end with status == 'stopped'
+                        convo.stop();
+                    }
+                },
+                {
+                    default: true,
+                    callback: function (response, convo) {
+                        convo.repeat();
+                        convo.next();
+                    }
+                }
+                ]);
+
+                convo.next();
+
+            }, {
+                    'key': 'nickname'
+                }); // store the results in a field called nickname
+
+            convo.on('end', function (convo) {
+                if (convo.status == 'completed') {                           
+
+                    controller.storage.users.get(message.user, function (err, user) {
+                        if (!user) {
+                            user = {
+                                id: message.user,
+                            };
+                        }
+                        user.name = convo.extractResponse('nickname');
+                        controller.storage.users.save(user, function (err, id) {
+                            bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.',function()
+                            {
+                                bot.reply(message,replyMessage);
+                            });
+                        });
+                    });
+                } else {
+                    // this happens if the conversation ended prematurely for some reason
+                    bot.reply(message, 'Nevermind. Hope you have a great day!');
+                }
+            });
+        }
+    });
 }
