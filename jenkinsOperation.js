@@ -37,26 +37,28 @@ startBuild = function (projectName, callback) {
                 if (!err) {
                         buildNumber = data.nextBuildNumber;
                         color = data.color;
+                        jenkins.job.build(projectName, function (err, data) {
+                                if (!err) {
+                                        if (color.toString().lastIndexOf("anime") != -1) {
+                                                callback("Job Already Running");
+                                        }
+                                        else {
+                                                callback(jobURL + projectName + "/" + buildNumber + "/console");
+                                        }
+                                }
+                                else {
+                                        callback("Error");
+                                }
+                        })
                 }
                 else {
                         console.log(err);
-                }
-        }), jenkins.job.build(projectName, function (err, data) {
-                if (!err) {
-                        if (color.toString().lastIndexOf("anime") != -1) {
-                                callback("Job Already Running");
-                        }
-                        else {
-                                callback(jobURL + projectName + "/" + buildNumber + "/console");
-                        }
-                }
-                else {
                         callback("Error");
                 }
         });
 }
 
-//Invoke this function to Stop Build by passing the exact name of Project and build number
+//Invoke this function to Stop Build by passing the exact name of Project
 stopBuild = function (projectName, callback) {
         var buildNumber = -1;
         var color;
@@ -70,25 +72,65 @@ stopBuild = function (projectName, callback) {
                                                 callback("Stopped");
                                         }
                                         else {
-                                                if (buildNumber == -1) {
-                                                        callback("Job not running");
-                                                }
-                                                else {
-                                                        callback("Error");
-                                                }
+                                                console.log(err);
+                                                callback("Error");
                                         }
                                 });
+                        }
+                        else
+                        {
+                                callback("Job not running");
                         }
 
                 }
                 else {
                         console.log(err);
+                        callback("Error");
                 }
         });
 
 
 }
 
+getBuildStability = function(projectName,callback)
+{        
+        jenkins.job.get(projectName, function (err, data) {
+                if (!err) {
+                        if(data)
+                        {
+                               if(data.healthReport)
+                               {
+                                        var description = data.healthReport[0].description;
+                                        var percentage = data.healthReport[0].score;
+                                        if(percentage>=90)
+                                        {
+                                                callback(":sunny: Looks like you're in Good Shape! :sunny: \n " + description);
+                                        }
+                                        else if(percentage<90 && percentage>=70)
+                                        {
+                                                callback(":lightning: It would be a good time to check your job! :lightning: \n " + description);
+                                        }
+                                        else
+                                        {
+                                                callback(":boom: Go save - " + projectName + ". It's on the verge of extinction! :boom: \n" + description);
+                                        }
+                               }
+                               else
+                               {
+                                        callback("No Build Information");       
+                               }                                
+                        }
+                        else
+                        {
+                                callback("No Build Information");
+                        }
+                }
+                else {
+                        console.log(err);
+                        callback("Error");
+                }
+        });
+}
 
 //Invoke this function to get the status of the last build
 lastBuildStatus = function (projectName, buildNo, callback) {
@@ -143,7 +185,6 @@ lastFailedBuild = function (projectName, callback) {
                 console.log('Error =' + err)
         }
 }
-
 
 //Invoke this function to get the lastSuccessfulBuild of a job
 lastSuccessfulBuild = function (projectName, callback) {

@@ -613,7 +613,7 @@ controller.hears(['feedback','suggestion'], 'direct_message,direct_mention,messa
 controller.hears(['start job (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.startConversation(message, function (err, convo) {
         if (!err) {
-            convo.ask('Do you want to search http://noi-qa-jenkins:8080 for job(s) having name `' + message.match[1] + '` ?', [
+            convo.ask('Do you want me to start a job on http://noi-qa-jenkins:8080 having name `' + message.match[1] + '` ?', [
             {
                 pattern: 'yes',
                 callback: function (response, convo) {                    
@@ -717,7 +717,7 @@ controller.hears(['start job (.*)'], 'direct_message,direct_mention,message_rece
 controller.hears(['stop job (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.startConversation(message, function (err, convo) {
         if (!err) {
-            convo.ask('Do you want to search http://noi-qa-jenkins:8080 for job(s) having name `' + message.match[1] + '` ?', [
+            convo.ask('Do you want me to stop a job on http://noi-qa-jenkins:8080 having name `' + message.match[1] + '` ?', [
             {
                 pattern: 'yes',
                 callback: function (response, convo) {                    
@@ -822,6 +822,121 @@ controller.hears(['stop job (.*)'], 'direct_message,direct_mention,message_recei
     });    
 });
 
+controller.hears(['job info (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+    bot.startConversation(message, function (err, convo) {
+        if (!err) {
+            convo.ask('Do you want me to look for job(s) on http://noi-qa-jenkins:8080 having name `' + message.match[1] + '` ?', [
+            {
+                pattern: 'yes',
+                callback: function (response, convo) {                    
+                    getJenkinsProject(message.match[1],function (jobs) {
+                        if(jobs.length==0)
+                        {
+                            bot.reply(message,":disappointed: No Job found with name - " + message.match[1] + " :disappointed:" );                                
+                        }
+                        else if(jobs.length==1)
+                        {
+                            getBuildStability(jobs[0].key,function(buildStability)
+                            {
+                                if(buildStability)
+                                {
+                                    if(buildStability=="Error")
+                                    {                                        
+                                        bot.reply(message,":zipper_mouth_face: Not able to get information about the job - `" + jobs[0].key + "` :zipper_mouth_face:" );
+                                    }
+                                    else if(buildStability=="No Build Information")
+                                    {
+                                        bot.reply(message,":relieved: Job `" + jobs[0].key + "` has no build information. I think it has not run till now :relieved: ");
+                                    }
+                                    else
+                                    {
+                                        bot.reply(message,buildStability);
+                                    }
+                                }
+                                else
+                                {
+                                    bot.reply(message,":zipper_mouth_face: Not able to get information about the job - `" + jobs[0].key + "` :zipper_mouth_face:" );
+                                }
+                            });
+                            convo.stop();
+                        }
+                        else
+                        {
+                            bot.reply(message, 'There are multiple Jobs having the keyword `'+message.match[1]+'`:-',function(callback)
+                            {          
+                                var count=0;
+                                async.eachSeries(jobs,function (job,callback) {
+                                    bot.reply(message, ++count + '. ' + job.key, function (err, sent) {
+                                        callback();
+                                    }); 
+                                },function(callback)
+                                {
+                                    convo.stop();
+                                    bot.startConversation(message, function (err, convo) {
+                                        if(err)
+                                        {
+                                            console.log(err);
+                                        }
+                                        convo.ask(':point_up_2: Please enter the Job number which you want to know more about', [{
+                                            pattern: '[1-9][0-9]{0,2}',
+                                            callback: function (response, convo) {            
+                                                if(parseInt(response.text)<=jobs.length)
+                                                {
+                                                    getBuildStability(jobs[parseInt(response.text)-1].key,function(buildStability)
+                                                    {
+                                                        if(buildStability)
+                                                        {
+                                                            if(buildStability=="Error")
+                                                            {                                        
+                                                                bot.reply(message,":zipper_mouth_face: Not able to get information about the job - `" + jobs[parseInt(response.text)-1].key + "` :zipper_mouth_face:" );
+                                                            }
+                                                            else if(buildStability=="No Build Information")
+                                                            {
+                                                                bot.reply(message,":relieved: Job `" + jobs[parseInt(response.text)-1].key + "` has no build information. I think it has not run till now :relieved: ");
+                                                            }
+                                                            else
+                                                            {
+                                                                bot.reply(message,buildStability);
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            bot.reply(message,":zipper_mouth_face: Not able to get information about the job - `" + jobs[0].key + "` :zipper_mouth_face:" );
+                                                        }
+                                                    });
+                                                    convo.stop();
+                                                }
+                                                else
+                                                {
+                                                    bot.reply(message,"Please enter a valid number");
+                                                    convo.repeat();
+                                                }
+                                            }
+                                        },                                              
+                                        {
+                                            pattern: '*',
+                                            callback: function (response, convo) {
+                                                bot.reply(message, 'Input not supported');
+                                                convo.repeat();
+                                            }
+                                        }]);                                    
+                                    });
+                                });
+                            });                       
+                        };
+                    });
+                }
+            },
+            {
+                pattern: 'no',
+                callback: function (response, convo) {
+                    bot.reply(message, 'Nevermind. Hope you have a great day !');
+                    convo.stop();
+                }
+            }]);
+        }
+    });    
+});
 
 
 controller.hears(['help'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
