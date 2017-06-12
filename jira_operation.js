@@ -142,22 +142,23 @@ searchUserName=function(userInfo,callback)
                 if (operation.retry(err)) return
                 //otherwise do following
                 const usersCollection = db.collection(userCollection);
-                var currentHostDocument = usersCollection.findOne({'id':userInfo}).then(function(doc) {
-                  console.log('Found the username and it is '+doc.userName);
+                var currentHostDocument = usersCollection.findOne({'id':userInfo}).then(function(doc) {                  
                   if(doc)
                     {
-                      if(doc.userName!=undefined)
+                      if(!doc.userName)
                          {
+                           console.log('Found the username and it is '+doc.userName);
+                           db.close();
                            callback(doc.userName,doc.name,"Found");
                          }
                          else
                           {
                           console.log('Not found user name');
+                          db.close();
                           callback(null,doc.name,"Not Found");
                           }
-                        }
-                  
-                    db.close();
+                        }                  
+                    
                 });
              });
            });
