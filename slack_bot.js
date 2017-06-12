@@ -453,67 +453,75 @@ controller.hears(['jira task (.*)'], 'direct_message,direct_mention,message_rece
 controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
             bot.startConversation(message, function (err, convo) {
                getInformationForUser(message.match[1], convo,message,bot, function (searchResults) {
-                   async.eachSeries(searchResults.issues, function (searchResult, callback) {
-                        getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
-                            if(searchRes.fields.timetracking.remainingEstimate)
-                            {                
-                                if(searchRes.fields.status.name=="Done") 
-                                {
-                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
-                                    bot.reply(message,"\n",function(err,sent) {
-                                    callback();
-                                   });
-                                });
-                               }
-                               else if(searchRes.fields.status.name=="To Do")
-                                {
-                                   bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
-                                   bot.reply(message,"\n",function(err,sent) {
-                                   callback(); 
-                                   });
-                                 });
-                                }
-                                else
-                                    {  
-                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+ searchRes.key + "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate + "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                
+                   if(searchResults.warningMessages)
+                   {                       
+                        bot.reply(message, "Looks like `" + message.match[1] + "` is not a valid JIRA username(they are generally a combination of the lastname and the 1st character of firstname)\n Example: `kishorer` should be the JIRA username for a person with the name `Ram Kishore`");
+                   }
+                   else
+                   {
+                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
+                            getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
+                                if(searchRes.fields.timetracking.remainingEstimate)
+                                {                
+                                    if(searchRes.fields.status.name=="Done") 
+                                    {
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
                                         bot.reply(message,"\n",function(err,sent) {
                                         callback();
-                                        });
+                                    });
+                                    });
+                                }
+                                else if(searchRes.fields.status.name=="To Do")
+                                    {
+                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback(); 
+                                    });
                                     });
                                     }
-                            }
-                            else
-                            {
-                            if(searchRes.fields.status.name=="Done") 
-                                {
-                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
-                                    bot.reply(message,"\n",function(err,sent) {
-                                    callback();
-                                    });
-                                });
-                               }
-                               else if(searchRes.fields.status.name=="To Do")
-                                {
-                                   bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
-                                   bot.reply(message,"\n",function(err,sent) {
-                                   callback(); 
-                                         });
-                                    });
+                                    else
+                                        {  
+                                            bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+ searchRes.key + "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate + "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                            bot.reply(message,"\n",function(err,sent) {
+                                            callback();
+                                            });
+                                        });
+                                        }
                                 }
                                 else
-                                    {  
-                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                {
+                                if(searchRes.fields.status.name=="Done") 
+                                    {
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
                                         bot.reply(message,"\n",function(err,sent) {
                                         callback();
                                         });
                                     });
-                                 }
-                             }
-                             });
- 
-                          });                          
-                     }); 
-                     convo.stop();
+                                }
+                                else if(searchRes.fields.status.name=="To Do")
+                                    {
+                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback(); 
+                                            });
+                                        });
+                                    }
+                                    else
+                                        {  
+                                            bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                            bot.reply(message,"\n",function(err,sent) {
+                                            callback();
+                                            });
+                                        });
+                                    }
+                                }
+                                });
+    
+                            });                          
+                        }
+                        convo.stop();
+                        }); 
              });
     });
 //For my own jira tasks
@@ -954,12 +962,15 @@ controller.hears(['help'], 'direct_message,direct_mention,message_received,menti
     "To know where an application is hosted, type - `environment for applicationname` (or something similar)\n" +
     "\n\n* Jenkins Integration* :-\n" +
     "Supported Jenkins Instance -  http://noi-qa-jenkins:8080\n" +
+    "For Checking a job status, type - `job info jobname`\n";
     "For Starting a job, type - `start job jobname`\n" +
-    "For Stopping a job, type - `stop job jobname`\n" +
-    "For Checking a job status, type - `job info jobname`\n" +
+    "For Stopping a job, type - `stop job jobname`\n";    
+
+    /*
     "\n\n* Slack User Phone Number Integration* :-\n" +
     "To know the phone number for a Slack User, type - `need to call personname` (or something similar)\n" +
     "\n\nTo provide any feedback or suggestions, type `feedback`";
+    */
     bot.reply(message, helpString);
 });
 
@@ -972,23 +983,51 @@ controller.hears(['(.*)'], 'direct_message,direct_mention,message_received,menti
 });
 
 function getUserPhone(username,callback) {
-    bot.api.users.list({},function (err,list) {        
-        var user = list.members.find(member => (member.real_name.toString().toLowerCase()===username.toString().toLowerCase()) || (member.name.toString().toLowerCase()===username.toString().toLowerCase()) || (member.profile.first_name.toString().toLowerCase().indexOf(username.toString().toLowerCase())!=-1));
-        if(user)
+    bot.api.users.list({},function (err,list) {
+        if(err)
         {
-            if(user.profile.phone)
+            console.log(err);
+            callback("Error");
+        }   
+        else
+        {
+            if(!list.members)
             {
-                callback(user.profile.phone);
+                console.log("No Members found");
+                callback("Error");
             }
             else
             {
-                callback("Number not present");
+                
+                var result=[];
+                async.eachSeries(list.members, function (member, callback) {                    
+                    if(member.profile.phone)
+                    {
+                        console.log(count++);
+                    }
+                    callback();
+                });                
+                
+                /*
+                var user = list.members.find(member => (member.profile.real_name.toString().toLowerCase()===username.toString().toLowerCase()) || (member.name.toString().toLowerCase()===username.toString().toLowerCase()) || (member.profile.first_name.toString().toLowerCase().indexOf(username.toString().toLowerCase())!=-1));
+                if(user)
+                {
+                    if(user.profile.phone)
+                    {
+                        callback(user.profile.phone);
+                    }
+                    else
+                    {
+                        callback("Number not present");
+                    }
+                }
+                else
+                {
+                    callback("Not Found");
+                } 
+                */               
             }
-        }
-        else
-        {
-            callback("Not Found");
-        }
+        }    
     });
 }
 
