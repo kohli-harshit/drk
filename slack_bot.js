@@ -647,9 +647,17 @@ controller.hears(['start job (.*)'], 'direct_message,direct_mention,message_rece
                                     {
                                         bot.reply(message,":sunglasses: Job `" + jobs[0].key + "`. Is already running :sunglasses: \n ");
                                     }
-                                    else if(buildURL!="Error")
+                                    else if(buildURL.lastIndexOf("/console")!=-1)
                                     {
                                         bot.reply(message,":muscle: Job `" + jobs[0].key + "`. Successfully inititiated ! :muscle: \n " + buildURL );
+                                    }
+                                    else if(buildURL.lastIndexOf("/build")!=-1)
+                                    {
+                                        bot.reply(message,":innocent: Job `" + jobs[0].key + "`is a Parameterized Job. Please initiate it from the link below:- :innocent: \n " + buildURL );
+                                    }
+                                    else
+                                    {
+                                        bot.reply(message,":zipper_mouth_face: Not able to Start the job - " + jobs[0].key + " :zipper_mouth_face:" );                                        
                                     }
                                 }
                                 else
@@ -685,9 +693,21 @@ controller.hears(['start job (.*)'], 'direct_message,direct_mention,message_rece
                                                     {
                                                         if(buildURL)
                                                         {
-                                                            if(buildURL!="Error")
+                                                            if(buildURL=="Job Already Running")
                                                             {
-                                                                bot.reply(message,":muscle: Job - " + jobs[parseInt(response.text)-1].key + " successfully inititiated :muscle: \n" + buildURL );
+                                                                bot.reply(message,":sunglasses: Job `" + jobs[parseInt(response.text)-1].key + "`. Is already running :sunglasses: \n ");
+                                                            }
+                                                            else if(buildURL.lastIndexOf("/console")!=-1)
+                                                            {
+                                                                bot.reply(message,":muscle: Job `" + jobs[parseInt(response.text)-1].key + "`. Successfully inititiated ! :muscle: \n " + buildURL );
+                                                            }
+                                                            else if(buildURL.lastIndexOf("/build")!=-1)
+                                                            {
+                                                                bot.reply(message,":innocent: Job `" + jobs[parseInt(response.text)-1].key + "`is a Parameterized Job. Please initiate it from the link below:- :innocent: \n " + buildURL );
+                                                            }
+                                                            else
+                                                            {
+                                                                bot.reply(message,":zipper_mouth_face: Not able to Start the job - " + jobs[parseInt(response.text)-1].key + " :zipper_mouth_face:" );
                                                             }
                                                         }                                                        
                                                         else

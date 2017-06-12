@@ -47,7 +47,7 @@ startBuild = function (projectName, callback) {
                                         }
                                 }
                                 else {
-                                        callback("Error");
+                                        callback(jobURL + projectName + "/build");
                                 }
                         })
                 }
