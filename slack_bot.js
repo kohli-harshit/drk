@@ -631,6 +631,7 @@ controller.hears(['start job (.*)'], 'direct_message,direct_mention,message_rece
                         if(jobs.length==0)
                         {
                             bot.reply(message,":disappointed: No Job found with name - " + message.match[1] + " :disappointed:" );                                
+                            convo.stop();
                         }
                         else if(jobs.length==1)
                         {
@@ -735,6 +736,7 @@ controller.hears(['stop job (.*)'], 'direct_message,direct_mention,message_recei
                         if(jobs.length==0)
                         {
                             bot.reply(message,":disappointed: No Job found with name - " + message.match[1] + " :disappointed:" );                                
+                            convo.stop();
                         }
                         else if(jobs.length==1)
                         {
@@ -843,6 +845,7 @@ controller.hears(['job info (.*)'], 'direct_message,direct_mention,message_recei
                         if(jobs.length==0)
                         {
                             bot.reply(message,":disappointed: No Job found with name - " + message.match[1] + " :disappointed:" );                                
+                            convo.stop();
                         }
                         else if(jobs.length==1)
                         {
@@ -966,7 +969,7 @@ controller.hears(['help'], 'direct_message,direct_mention,message_received,menti
     "Supported Jenkins Instance -  http://noi-qa-jenkins:8080\n" +
     "For Checking a job status, type - `job info jobname`\n"+
     "For Starting a job, type - `start job jobname`\n" +
-    "For Stopping a job, type - `stop job jobname`\n"; 
+    "For Stopping a job, type - `stop job jobname`\n";
 
     /*
     "\n\n* Slack User Phone Number Integration* :-\n" +
