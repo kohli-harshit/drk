@@ -1087,7 +1087,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
    getInformationForUser(userName, convo,message,bot, function (searchResults) {
                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
                         getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
-                            if(searchRes.fields.timetracking.remainingEstimate)       
+                            if(searchRes.fields.timetracking.remainingEstimate===undefined)       
                             {                
                                 if(searchRes.fields.status.name=="Done") 
                                 {
