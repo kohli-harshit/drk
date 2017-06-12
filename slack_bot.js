@@ -169,6 +169,7 @@ bot.startConversation(message, function (err, convo) {
     });
 });
 
+/*
 controller.hears(['phone number for (.*)','need to call (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     getUserPhone(message.match[1],function(phone)
     {
@@ -186,6 +187,7 @@ controller.hears(['phone number for (.*)','need to call (.*)'], 'direct_message,
         }
     });
 });
+*/
 
 //When user want a project run status
 controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
