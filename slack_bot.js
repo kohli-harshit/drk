@@ -964,9 +964,9 @@ controller.hears(['help'], 'direct_message,direct_mention,message_received,menti
     "To know where an application is hosted, type - `environment for applicationname` (or something similar)\n" +
     "\n\n* Jenkins Integration* :-\n" +
     "Supported Jenkins Instance -  http://noi-qa-jenkins:8080\n" +
-    "For Checking a job status, type - `job info jobname`\n";
+    "For Checking a job status, type - `job info jobname`\n"+
     "For Starting a job, type - `start job jobname`\n" +
-    "For Stopping a job, type - `stop job jobname`\n";    
+    "For Stopping a job, type - `stop job jobname`\n"; 
 
     /*
     "\n\n* Slack User Phone Number Integration* :-\n" +
