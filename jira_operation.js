@@ -145,7 +145,7 @@ searchUserName=function(userInfo,callback)
                 var currentHostDocument = usersCollection.findOne({'id':userInfo}).then(function(doc) {                  
                   if(doc)
                     {
-                      if(!doc.userName)
+                      if(doc.userName!=undefined)
                          {
                            console.log('Found the username and it is '+doc.userName);
                            db.close();

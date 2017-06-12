@@ -535,11 +535,15 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
            searchUserName(message.user,function(userName,name,status){
                if(status=="Not Found")
                {
-                    convo.ask('I don\'t have your JIRA username, Please enter your JIRA Username (don\'t worry I won\'t ask for your Password! :sunglasses:) :-', function (response, convo) {
-                    updateUserName(message.user,name,response.text,function(userName)
-                    {
-                        callAndPrintOutut(userName,convo,message,bot);
-                    });                    
+                    convo.stop();
+                    bot.startConversation(message, function (err, convo) {
+                        convo.ask('I don\'t have your JIRA username, Please enter your JIRA Username (don\'t worry I won\'t ask for your Password! :sunglasses:) :-', function (response, convo) {
+                        updateUserName(message.user,name,response.text,function(userName)
+                        {
+                            callAndPrintOutut(userName,convo,message,bot);
+                        });                    
+                        convo.stop();
+                    });
               });
               }
               else if(status=="Found")
