@@ -81,39 +81,62 @@ getRunDetails = function (id,choice,bot,message,convo,callback)
                                 case 1:                
                                 for(var i=0;i<10;i++)
                                 {      
-                                        console.log("Run Name = " + data[i].name);
-                                        var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
-                                        runDetails.push({
-                                        key: data[i].name,
-                                        value: percentage
-                                        });
+                                        if(data[i])
+                                        {
+                                                console.log("Run Name = " + data[i].name);
+                                                var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
+                                                        runDetails.push({
+                                                        key: data[i].name,
+                                                        value: percentage
+                                                });
+                                        }
+                                        else
+                                        {
+                                                break;
+                                        }
                                 }
                                 callback(runDetails);
                                 break;
                                 case 2:
-                                for(var i=0;i<10;i++)
-                                {       if(data[i].is_completed==true)
+                                for(var i=0;i<10;i++)                                
+                                {       
+                                         if(data[i])
                                         {
-                                                console.log("Run Name = " + data[i].name);
-                                                var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
-                                                runDetails.push({
-                                                key: data[i].name,
-                                                value: percentage
-                                                });
+                                                if(data[i].is_completed==true)
+                                                {
+                                                        console.log("Run Name = " + data[i].name);
+                                                        var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
+                                                        runDetails.push({
+                                                        key: data[i].name,
+                                                        value: percentage
+                                                        });
+                                                }
+                                        }
+                                        else
+                                        {
+                                                break;
                                         }
                                 }
                                 callback(runDetails);
                                 break;
                                 case 3:
                                 for(var i=0;i<10;i++)
-                                {       if(data[i].is_completed==false)
+                                {       
+                                        if(data[i])
                                         {
-                                                console.log("Run Name = " + data[i].name);
-                                                var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
-                                                runDetails.push({
-                                                key: data[i].name,
-                                                value: percentage
-                                                });
+                                                if(data[i].is_completed==false)
+                                                {
+                                                        console.log("Run Name = " + data[i].name);
+                                                        var percentage=(data[i].passed_count*100)/(data[i].passed_count+data[i].failed_count);
+                                                        runDetails.push({
+                                                        key: data[i].name,
+                                                        value: percentage
+                                                        });
+                                                }
+                                        }
+                                        else
+                                        {
+                                                break;
                                         }
                                 }
                                 callback(runDetails);
