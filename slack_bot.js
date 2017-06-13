@@ -445,6 +445,7 @@ controller.hears(['where is (.*) hosted','environment for (.*)', '(.*) environme
 });
 
 
+/*
 //For task searching
 controller.hears(['jira task (.*)'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
              bot.startConversation(message, function (err, convo) {
@@ -465,6 +466,8 @@ controller.hears(['jira task (.*)'], 'direct_message,direct_mention,message_rece
                     });
                 });
             });
+*/
+
 //For jira Tasks of a user
 controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
             bot.startConversation(message, function (err, convo) {
@@ -554,7 +557,7 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
                         convo.ask('I don\'t have your JIRA username, Please enter your JIRA Username (don\'t worry I won\'t ask for your Password! :sunglasses:) :-', function (response, convo) {
                         updateUserName(message.user,name,response.text,function(userName)
                         {
-                            callAndPrintOutut(userName,convo,message,bot);
+                            callAndPrintOutput(userName,convo,message,bot);
                         });                    
                         convo.stop();
                     });
@@ -562,7 +565,7 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
               }
               else if(status=="Found")
                 {
-                callAndPrintOutut(userName,convo,message,bot);
+                callAndPrintOutput(userName,convo,message,bot);
                 }
            });
            convo.stop();
@@ -1097,7 +1100,7 @@ function reverse(s) {
     return s.split("").reverse().join("");
 }
 
-callAndPrintOutut=function(userName,convo,message,bot)
+callAndPrintOutput=function(userName,convo,message,bot)
 {
    getInformationForUser(userName, convo,message,bot, function (searchResults) {
                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
@@ -1141,7 +1144,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
                                }
                                else if(searchRes.fields.status.name=="To Do")
                                 {
-                                   bot.reply("Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                   bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
                                    bot.reply(message,"\n",function(err,sent) {
                                    callback(); 
                                          });
@@ -1149,7 +1152,7 @@ callAndPrintOutut=function(userName,convo,message,bot)
                                 }
                                 else
                                     {  
-                                        bot.reply("Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
                                         bot.reply(message,"\n",function(err,sent) {
                                         callback();
                                         });
