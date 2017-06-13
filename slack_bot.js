@@ -283,9 +283,9 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                                     });
                                                 }},
                                                 {
-                                                    pattern: '*',
+                                                    pattern: '.*',
                                                     callback: function (response, convo) {
-                                                        bot.reply(message, 'Input not supported');
+                                                        bot.reply(message, 'Input not supported. Please Try Again.');
                                                         convo.repeat();
                                                     }
                                                 }]);
@@ -300,9 +300,9 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                               }
                                               },
                                               {
-                                                    pattern: '*',
+                                                    pattern: '.*',
                                                     callback: function (response, convo) {
-                                                        bot.reply(message, 'Input not supported');
+                                                        bot.reply(message, 'Input not supported. Please Try Again.');
                                                         convo.repeat();
                                                 }
                                                }]);     
@@ -364,9 +364,9 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                         });
                                     }},
                                     {
-                                        pattern: '*',
+                                        pattern: '.*',
                                         callback: function (response, convo) {
-                                             bot.reply(message, 'Input not supported');
+                                             bot.reply(message, 'Input not supported. Please Try Again.');
                                              convo.repeat();
                                         }
                                     }]);
@@ -742,9 +742,9 @@ controller.hears(['start job (.*)'], 'direct_message,direct_mention,message_rece
                                             }
                                         },                                              
                                         {
-                                            pattern: '*',
+                                            pattern: '.*',
                                             callback: function (response, convo) {
-                                                bot.reply(message, 'Input not supported');
+                                                bot.reply(message, 'Input not supported. Please Try Again.');
                                                 convo.repeat();
                                             }
                                         }]);                                    
@@ -851,9 +851,9 @@ controller.hears(['stop job (.*)'], 'direct_message,direct_mention,message_recei
                                             }
                                         },                                              
                                         {
-                                            pattern: '*',
+                                            pattern: '.*',
                                             callback: function (response, convo) {
-                                                bot.reply(message, 'Input not supported');
+                                                bot.reply(message, 'Input not supported. Please Try Again.');
                                                 convo.repeat();
                                             }
                                         }]);                                    
@@ -968,9 +968,9 @@ controller.hears(['job info (.*)'], 'direct_message,direct_mention,message_recei
                                             }
                                         },                                              
                                         {
-                                            pattern: '*',
+                                            pattern: '.*',
                                             callback: function (response, convo) {
-                                                bot.reply(message, 'Input not supported');
+                                                bot.reply(message, 'Input not supported. Please Try Again.');
                                                 convo.repeat();
                                             }
                                         }]);                                    
