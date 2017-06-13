@@ -235,7 +235,7 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                                         pattern: '[1-3]',
                                                         callback: function (response, convo) {
                                                         getRunDetails(projectId, parseInt(response.text),bot,message,convo, function (runDetails) {
-                                                        bot.reply(message, ' The project run details are as follows:-', function () {
+                                                        bot.reply(message, ' Looking for results on TestRail...', function () {
                                                             var sum=0;
                                                             var count=0;
                                                             var runInfo;
@@ -250,25 +250,32 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                                                     sum = sum + runDetail.value;
                                                                     count = count+1;
                                                                     runInfo = "(Pass Percentage = " + parseFloat(Math.round(runDetail.value * 100) / 100).toFixed(2) + "\%)";
-                                                                }
+                                                                }                                                                
                                                                 bot.reply(message, runDetail.key + " " + runInfo, function (err, sent) {                                                    
                                                                     callback();
-                                                                });
+                                                                });        
                                                             },function()
                                                             {
                                                                 var avg = sum/count;
                                                                 avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
                                                                 if(avg>=90)
                                                                 {
-                                                                    bot.reply(message, ":muscle: Looks like `" + message.match[1] + "` is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
+                                                                    bot.reply(message, ":muscle: Looks like `" + message.match[1] + "` is in Good Shape! Average Pass Percentage for last " + count + " runs = " + avg + "% :muscle:");
                                                                 }
-                                                                else if(avg<90 && avg>=80)
+                                                                else if(avg<90 && avg>=75)
                                                                 {
-                                                                    bot.reply(message, ":fearful: Looks like `" + message.match[1] +  "` needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
+                                                                    bot.reply(message, ":fearful: Looks like `" + message.match[1] +  "` needs some help. Average Pass Percentage for last " + count + " runs = " + avg + "% :fearful:");
                                                                 }
                                                                 else
                                                                 {
-                                                                    bot.reply(message, ":scream: Looks like `" + message.match[1] +  "` is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
+                                                                    if(isNaN(avg))
+                                                                    {
+                                                                        bot.reply(message, ":disappointed: No Run info available for `" + message.match[1] +  "` :disappointed:");
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        bot.reply(message, ":scream: Looks like `" + message.match[1] +  "` is drowning! Average Pass Percentage for last " + count + " runs = " + avg + "% :scream:");
+                                                                    }
                                                                 }                                                
                                                             });
                                                             convo.stop();
@@ -309,7 +316,7 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                         pattern: '[1-3]',
                                         callback: function (response, convo) {
                                             getRunDetails(Ids[0].value, parseInt(response.text),bot,message,convo, function (runDetails) {
-                                                bot.reply(message, ' The project run details are as follows:-', function () {
+                                                bot.reply(message, ' Looking for TestRail Run Info...', function () {
                                                 var sum=0;
                                                 var count=0;
                                                 var runInfo;
@@ -334,16 +341,23 @@ controller.hears(['testrail status for (.*)','testrail for (.*)','(.*) testrail'
                                                     avg = parseFloat(Math.round(avg * 100) / 100).toFixed(2);
                                                     if(avg>=90)
                                                     {
-                                                        bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last 10 runs = " + avg + "% :muscle:");
+                                                        bot.reply(message, ":muscle: Looks like \"" + message.match[1] + "\" is in Good Shape! Average Pass Percentage for last " + count + " runs = " + avg + "% :muscle:");
                                                     }
-                                                    else if(avg<90 && avg>=80)
+                                                    else if(avg<90 && avg>=75)
                                                     {
-                                                        bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last 10 runs = " + avg + "% :fearful:");
+                                                        bot.reply(message, ":fearful: Looks like \"" + message.match[1] +  "\" needs some help. Average Pass Percentage for last " + count + " runs = " + avg + "% :fearful:");
                                                     }
                                                     else
                                                     {
-                                                        bot.reply(message, ":scream: Looks like \"" + message.match[1] +  "\" is drowning! Average Pass Percentage for last 10 runs = " + avg + "% :scream:");
-                                                    }                                                
+                                                        if(isNaN(avg))
+                                                        {
+                                                            bot.reply(message, ":disappointed: No Run info available for `" + message.match[1] +  "` :disappointed:");
+                                                        }
+                                                        else
+                                                        {
+                                                            bot.reply(message, ":scream: Looks like `" + message.match[1] +  "` is drowning! Average Pass Percentage for last " + count + " runs = " + avg + "% :scream:");
+                                                        }                                                        
+                                                    }                                    
                                                 });
                                                 convo.stop();
                                             });
@@ -1008,6 +1022,7 @@ controller.hears(['(.*)'], 'direct_message,direct_mention,message_received,menti
     getGiphy("dontKnow",function(link)
     {
         bot.reply(message, "I'm sorry I don't understand that..." + link);
+        bot.reply(message, "Type `help` for a usage guide");
     });
 });
 
