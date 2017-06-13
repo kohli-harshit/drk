@@ -32,11 +32,14 @@
     "xlsx" : "0.9.13",
     "retry": "^0.10.1",
     "username": "^2.3.0",
-    "async":"^2.4.0" },
+    "async":"^2.4.0",
+    "node-rest-client": "3.1.0",
+    "random-js":"1.0.8",
+    "jenkins" : "0.20.0" },
   "devDependencies": {
     "jscs": "^2.7.0",
     "mocha": "^2.4.5",
-    "should": "^8.0.2",
+    "should": "^8.0.2",    
     "winston": "^2.1.1"
   },
   "scripts": {
