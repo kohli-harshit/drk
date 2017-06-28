@@ -159,7 +159,7 @@ controller.hears(['update my jira username'], 'direct_message,direct_mention,men
             if (!err) {
                 if(user.userName===undefined)
                 {
-                    bot.reply(message,"Your jira username is not in my dossier please use my `myjira functionlity to add that");
+                    bot.reply(message,"Your jira username is not in my dossier please use my `myjira` functionlity to add that");
                     convo.stop();
                 }
                 else
