@@ -99,7 +99,116 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
         }
     });
 });
+//To update name
+controller.hears(['update my name'], 'direct_message,direct_mention,mention', function (bot, message) {
+ controller.storage.users.get(message.user, function (err, user) {
+        if (user) 
+            {
+            bot.startConversation(message, function (err, convo) {
+            if (!err) {
+                convo.say('Your name is '+user.name);
+                convo.ask('What should I call you from now?', function (response, convo) {
+                    var userInput=response.text;
+                    convo.stop();
+                    bot.startConversation(message, function (err, convo) {
+                    convo.ask('You want me to call you `' + response.text + '`?', [{
+                    pattern: 'yes',
+                    callback: function (response, convo) {
+                    updateField(message.user,"username",userInput,convo,bot,message,function(updatedObject,callback)
+                    {
+                        bot.reply(message, 'Got it. I will call you ' + userInput+ ' from now on. :slightly_smiling_face: ');
+                        convo.next();
+                    })
+                        
+                    }
+                },
+                {
+                    pattern: 'no',
+                    callback: function (response, convo) {
+                        // stop the conversation. this will cause it to end with status == 'stopped'
+                        bot.reply(message, 'NeverMind! happy to help :slightly_smiling_face: ');
+                        convo.stop();
+                    }
+                }
+                ]);
+                });
+                
 
+             });
+            }
+        else
+        {
+            bot.reply(message,"Something wents wrong please retry")
+        
+        } 
+    
+});  
+    }               
+    else {
+        getNameFromUser(bot,message,"");
+    }
+            
+    });
+});
+//To update jira username 
+controller.hears(['update my jira username'], 'direct_message,direct_mention,mention', function (bot, message) {
+ controller.storage.users.get(message.user, function (err, user) {
+        if (user) 
+            {
+            bot.startConversation(message, function (err, convo) {
+            if (!err) {
+                if(user.userName===undefined)
+                {
+                    bot.reply(message,"Your jira username is not in my dossier please use my `myjira functionlity to add that");
+                    convo.stop();
+                }
+                else
+                {
+                convo.say('Your jira username is '+user.userName);
+                convo.ask('Please provide me your new jira username?', function (response, convo) {
+                    var userInput=response.text;
+                    convo.stop();
+                    bot.startConversation(message, function (err, convo) {
+                    convo.ask('You want me to change your username to `' + response.text + '`?', [{
+                    pattern: 'yes',
+                    callback: function (response, convo) {
+                    updateField(message.user,"username",userInput,convo,bot,message,function(updatedObject,callback)
+                    {
+                        bot.reply(message, 'Got it. Your jira username is updated to ' + userInput+ ' from now on. :slightly_smiling_face: ');
+                        convo.next();
+                    })
+                        
+                    }
+                },
+                {
+                    pattern: 'no',
+                    callback: function (response, convo) {
+                        // stop the conversation. this will cause it to end with status == 'stopped'
+                        bot.reply(message, 'NeverMind! happy to help :slightly_smiling_face: ');
+                        convo.stop();
+                    }
+                }
+                ]);
+                });
+                
+
+            });
+            }
+            }
+        else
+        {
+            bot.reply(message,"Something wents wrong please retry")
+        
+        } 
+    
+});  
+    }               
+    else {
+        getNameFromUser(bot,message,"");
+    }
+            
+    });
+});
 
 //User asks Bot Identity
 controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'], 'direct_message,direct_mention,mention', function (bot, message) {
@@ -468,81 +577,6 @@ controller.hears(['jira task (.*)'], 'direct_message,direct_mention,message_rece
             });
 */
 
-//For jira Tasks of a user
-controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
-            bot.startConversation(message, function (err, convo) {
-               getInformationForUser(message.match[1], convo,message,bot, function (searchResults) {
-                
-                   if(searchResults.warningMessages)
-                   {                       
-                        bot.reply(message, "Looks like `" + message.match[1] + "` is not a valid JIRA username(they are generally a combination of the lastname and the 1st character of firstname)\n Example: `kishorer` should be the JIRA username for a person with the name `Ram Kishore`");
-                   }
-                   else
-                   {
-                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
-                            getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
-                                if(searchRes.fields.timetracking.remainingEstimate!=undefined)
-                                {                
-                                    if(searchRes.fields.status.name=="Done") 
-                                    {
-                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
-                                        bot.reply(message,"\n",function(err,sent) {
-                                        callback();
-                                    });
-                                    });
-                                }
-                                else if(searchRes.fields.status.name=="To Do")
-                                    {
-                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
-                                    bot.reply(message,"\n",function(err,sent) {
-                                    callback(); 
-                                    });
-                                    });
-                                    }
-                                    else
-                                        {  
-                                            bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+ searchRes.key + "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate + "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
-                                            bot.reply(message,"\n",function(err,sent) {
-                                            callback();
-                                            });
-                                        });
-                                        }
-                                }
-                                else
-                                {
-                                if(searchRes.fields.status.name=="Done") 
-                                    {
-                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
-                                        bot.reply(message,"\n",function(err,sent) {
-                                        callback();
-                                        });
-                                    });
-                                }
-                                else if(searchRes.fields.status.name=="To Do")
-                                    {
-                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
-                                    bot.reply(message,"\n",function(err,sent) {
-                                    callback(); 
-                                            });
-                                        });
-                                    }
-                                    else
-                                        {  
-                                            bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
-                                            bot.reply(message,"\n",function(err,sent) {
-                                            callback();
-                                            });
-                                        });
-                                    }
-                                }
-                                });
-    
-                            });                          
-                        }
-                        convo.stop();
-                        }); 
-             });
-    });
 //For my own jira tasks
 controller.hears(['my jira'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
   controller.storage.users.get(message.user, function (err, user)
@@ -555,11 +589,19 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
                     convo.stop();
                     bot.startConversation(message, function (err, convo) {
                         convo.ask('I don\'t have your JIRA username, Please enter your JIRA Username (don\'t worry I won\'t ask for your Password! :sunglasses:) :-', function (response, convo) {
-                        updateUserName(message.user,name,response.text,function(userName)
+                        if(response.text.toString().toLowerCase().lastIndexOf("@monotype.com")!=-1)
                         {
-                            callAndPrintOutput(userName,convo,message,bot);
-                        });                    
-                        convo.stop();
+                            bot.reply(message,"Please enter JIRA username instead of mail ID...");
+                            convo.repeat();
+                        }
+                        else
+                        {
+                            updateUserName(message.user,name,response.text,function(userName)
+                            {
+                                callAndPrintOutput(userName,convo,message,bot);
+                            });                    
+                            convo.stop();
+                        }
                     });
               });
               }
@@ -636,6 +678,82 @@ controller.hears(['my jira'], 'direct_message,direct_mention,message_received,me
   )
 }); 
 
+
+//For jira Tasks of a user
+controller.hears(['(.*) jira list','(.*) jira task'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
+            bot.startConversation(message, function (err, convo) {
+               getInformationForUser(message.match[1], convo,message,bot, function (searchResults) {
+                
+                   if(searchResults.warningMessages)
+                   {                       
+                        bot.reply(message, "Looks like `" + message.match[1] + "` is not a valid JIRA username(they are generally a combination of the lastname and the 1st character of firstname)\n Example: `kishorer` should be the JIRA username for a person with the name `Ram Kishore`");
+                   }
+                   else
+                   {
+                    async.eachSeries(searchResults.issues, function (searchResult, callback) {
+                            getInformationById(searchResult.key, convo,message,bot, function (searchRes) {       
+                                if(searchRes.fields.timetracking.remainingEstimate!=undefined)
+                                {                
+                                    if(searchRes.fields.status.name=="Done") 
+                                    {
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                        bot.reply(message,"\n",function(err,sent) {
+                                        callback();
+                                    });
+                                    });
+                                }
+                                else if(searchRes.fields.status.name=="To Do")
+                                    {
+                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback(); 
+                                    });
+                                    });
+                                    }
+                                    else
+                                        {  
+                                            bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+ searchRes.key + "\nRemaining Time: "+searchRes.fields.timetracking.remainingEstimate + "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                            bot.reply(message,"\n",function(err,sent) {
+                                            callback();
+                                            });
+                                        });
+                                        }
+                                }
+                                else
+                                {
+                                if(searchRes.fields.status.name=="Done") 
+                                    {
+                                        bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :trophy:', function (err, sent) { 
+                                        bot.reply(message,"\n",function(err,sent) {
+                                        callback();
+                                        });
+                                    });
+                                }
+                                else if(searchRes.fields.status.name=="To Do")
+                                    {
+                                    bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :cold_sweat:', function (err, sent) { 
+                                    bot.reply(message,"\n",function(err,sent) {
+                                    callback(); 
+                                            });
+                                        });
+                                    }
+                                    else
+                                        {  
+                                            bot.reply(message,"Task: `" +searchRes.fields.summary+"`\nLink: https://jira.monotype.com/browse/"+searchRes.key+ "\nCurrent Status: " +searchRes.fields.status.name+' :bicyclist: ', function (err, sent) { 
+                                            bot.reply(message,"\n",function(err,sent) {
+                                            callback();
+                                            });
+                                        });
+                                    }
+                                }
+                                });
+    
+                            });                          
+                        }
+                        convo.stop();
+                        }); 
+             });
+    });
 
 controller.hears(['feedback','suggestion'], 'direct_message,direct_mention,message_received,mention', function (bot, message) {
     bot.reply(message, "For any feedback/suggestions please drop a mailto:harshit.kohli@monotype.com");

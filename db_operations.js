@@ -4,7 +4,7 @@ const mongodb = require('mongodb')
 const username = require('username')
 const moment = require('moment')
 var Q=require('q')
-
+const userCollection='users';
 const url = 'mongodb://noi-qa-jenkins:27017/drk-db';
 const mongoClient = mongodb.MongoClient
 const currentTime = new Date()
@@ -151,3 +151,37 @@ getAllMTApplications = function (callback)
         });
     })         
 }
+updateField=function(id,valueToChange,userInput,convo,bot,message,callback)
+                    {
+                       mongoClient.connect(url, (err, db) => {
+                            if (operation.retry(err)) return
+                                const userCollectionDetails = db.collection(userCollection)
+                                 var currentUserDocument = userCollectionDetails.findOne({'id':id}).then(function(doc) {
+                                    if(doc)
+                                        {
+                                            if(valueToChange=="name")
+                                            {
+                                            userCollectionDetails.update(
+                                                {_id:doc._id},
+                                                {$set:{
+                                                        name: userInput,
+                                                      }},dbOperationFinished,callback(doc)); 
+                                            }
+                                            else if(valueToChange=="username")
+                                            {
+                                            userCollectionDetails.update(
+                                                {_id:doc._id},
+                                                {$set:{
+                                                        userName: userInput,
+                                                      }},dbOperationFinished,callback(doc));
+
+                                            }
+                                        }
+                       
+                                     });
+
+                                var dbOperationFinished = function(){
+                                db.close();    
+                                }
+                    });
+        }
