@@ -88,11 +88,19 @@ result.then
                 console.log(response.statusCode);
                 if(response.statusCode=='200')
                   {
-                        callback(searchResult);         
+                        if(searchResult.issues.length==0)
+                        {
+                          bot.reply(message,'":flushed: Looks like there is no task on this user\'s plate! :flushed:');
+                          convo.stop();   
+                        }
+                        else
+                        {
+                          callback(searchResult);
+                        }
                   }  
                   else
                   {
-                    bot.reply(message,'":flushed: Looks like there is no task on this users plate! :flushed:');
+                    bot.reply(message,':confused: Something went wrong. Please make sure your JIRA username is correct. :confused:');
                     convo.stop();   
                   }    
         });
