@@ -99,7 +99,116 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
         }
     });
 });
+//To update name
+controller.hears(['update my name'], 'direct_message,direct_mention,mention', function (bot, message) {
+ controller.storage.users.get(message.user, function (err, user) {
+        if (user) 
+            {
+            bot.startConversation(message, function (err, convo) {
+            if (!err) {
+                convo.say('Your name is '+user.name);
+                convo.ask('What should I call you from now?', function (response, convo) {
+                    var userInput=response.text;
+                    convo.stop();
+                    bot.startConversation(message, function (err, convo) {
+                    convo.ask('You want me to call you `' + response.text + '`?', [{
+                    pattern: 'yes',
+                    callback: function (response, convo) {
+                    updateField(message.user,"username",userInput,convo,bot,message,function(updatedObject,callback)
+                    {
+                        bot.reply(message, 'Got it. I will call you ' + userInput+ ' from now on. :slightly_smiling_face: ');
+                        convo.next();
+                    })
+                        
+                    }
+                },
+                {
+                    pattern: 'no',
+                    callback: function (response, convo) {
+                        // stop the conversation. this will cause it to end with status == 'stopped'
+                        bot.reply(message, 'NeverMind! happy to help :slightly_smiling_face: ');
+                        convo.stop();
+                    }
+                }
+                ]);
+                });
+                
 
+             });
+            }
+        else
+        {
+            bot.reply(message,"Something wents wrong please retry")
+        
+        } 
+    
+});  
+    }               
+    else {
+        getNameFromUser(bot,message,"");
+    }
+            
+    });
+});
+//To update jira username 
+controller.hears(['update my jira username'], 'direct_message,direct_mention,mention', function (bot, message) {
+ controller.storage.users.get(message.user, function (err, user) {
+        if (user) 
+            {
+            bot.startConversation(message, function (err, convo) {
+            if (!err) {
+                if(user.userName===undefined)
+                {
+                    bot.reply(message,"Your jira username is not in my dossier please use my `myjira` functionlity to add that");
+                    convo.stop();
+                }
+                else
+                {
+                convo.say('Your jira username is '+user.userName);
+                convo.ask('Please provide me your new jira username?', function (response, convo) {
+                    var userInput=response.text;
+                    convo.stop();
+                    bot.startConversation(message, function (err, convo) {
+                    convo.ask('You want me to change your username to `' + response.text + '`?', [{
+                    pattern: 'yes',
+                    callback: function (response, convo) {
+                    updateField(message.user,"username",userInput,convo,bot,message,function(updatedObject,callback)
+                    {
+                        bot.reply(message, 'Got it. Your jira username is updated to ' + userInput+ ' from now on. :slightly_smiling_face: ');
+                        convo.next();
+                    })
+                        
+                    }
+                },
+                {
+                    pattern: 'no',
+                    callback: function (response, convo) {
+                        // stop the conversation. this will cause it to end with status == 'stopped'
+                        bot.reply(message, 'NeverMind! happy to help :slightly_smiling_face: ');
+                        convo.stop();
+                    }
+                }
+                ]);
+                });
+                
+
+            });
+            }
+            }
+        else
+        {
+            bot.reply(message,"Something wents wrong please retry")
+        
+        } 
+    
+});  
+    }               
+    else {
+        getNameFromUser(bot,message,"");
+    }
+            
+    });
+});
 
 //User asks Bot Identity
 controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'], 'direct_message,direct_mention,mention', function (bot, message) {
