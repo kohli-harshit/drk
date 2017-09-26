@@ -35,14 +35,14 @@ var searchArgs = {
 
         headers: {
                 "Content-Type": "application/json",
-                "Authorization": "Basic c3NoYXJtYTpHb29nbGVAMTIzNA=="
+                "Authorization": "Basic bWl0dGFsbjpTaHlhbUAxMQ=="
                  } 
 };
 var argsForPost = {
         data: { body: "hello" },
         headers: {
                 "Content-Type": "application/json",
-                "Authorization": "Basic c3NoYXJtYTpHb29nbGVAMTIzNA=="
+                "Authorization": "Basic bWl0dGFsbjpTaHlhbUAxMQ=="
                  } 
 };
 
